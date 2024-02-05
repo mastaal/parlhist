@@ -1,0 +1,17 @@
+pip>=23.2
+
+# Crawling
+beautifulsoup4>=4.12.2
+requests>=2.31.0
+
+# Framework
+Django>=4.2.2
+psycopg[binary,pool]>=3.1.9
+
+gunicorn
+
+rq>=1.15.1
+django-rq>=2.8.1
+django-redis>=2.5.0
+
+numpy
