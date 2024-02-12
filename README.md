@@ -5,6 +5,9 @@ academic studies of parliamentary documents. It is developed at the Institute of
 Leiden Law School (Leiden University, the Netherlands), in order to investigate in a more empiric manner
 the role of the Dutch Constitution in Dutch parliamentary debates.
 
+The data used by this program is retrieved from the official publications by the Dutch Government.
+More information can be found on [the page of this dataset on data.overheid.nl](https://data.overheid.nl/dataset/officiele-bekendmakingen#panel-description). [The API reference of the SRU API by KOOP can be found here](https://data.overheid.nl/sites/default/files/dataset/d0cca537-44ea-48cf-9880-fa21e1a7058f/resources/Handleiding%2BSRU%2B2.0.pdf).
+
 ## Current features
 
 Currently, `parlhist` can be used to easily crawl all the Dutch parliamentary minutes (Handelingen) and
