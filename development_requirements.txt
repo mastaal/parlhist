@@ -1,9 +1,9 @@
 -r requirements.txt
 
 # Improve code quality
-pylint
-flake8
-mypy
+pylint>=3.0.3
+flake8>=7.0.0
+mypy>=1.8.0
 
 # Types
 types-requests
