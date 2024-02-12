@@ -44,7 +44,7 @@ def __check_response_status_code(response: requests.Response) -> None:
         raise CrawlerException(f"Received not-OK status code from page get {response.status_code}")
 
 
-def get_url_or_error(url: str, memoize=True) -> requests.Response:
+def get_url_or_error(url: str, memoize=settings.PARLHIST_CRAWLER_DEFAULT_USE_MEMOIZATION) -> requests.Response:
     """Try to get a page, or throw a CrawlerException if it fails
 
     By default, it memoizes the requests in order to lower issues at the receiver end, but to
