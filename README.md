@@ -1,7 +1,7 @@
 # parlhist
 
 `parlhist` (working title) is a Python application intended to enable more empirical and statistical
-academic studies of parliamentary documents. It is developed at the Institute of Public Law of the
+academic studies of parliamentary minutes and documents. It is developed at the Institute of Public Law of the
 Leiden Law School (Leiden University, the Netherlands), in order to investigate in a more empiric manner
 the role of the Dutch Constitution in Dutch parliamentary debates.
 
@@ -63,6 +63,9 @@ $ ./manage handeling_crawl_uncrawled_behandelde_kamerstukdossiers
 $ ./manage handeling_crawl_uncrawled_behandelde_kamerstukken
 ```
 Depending on how many years of data you have crawled, this may take several hours.
+
+Alternatively, you can run the `initialize_database.sh` shell script, which initializes the database with
+all Handelingen of both the Eerste Kamer and Tweede Kamer of the parliamentary years 2011/2012 through 2021/2022, and the related Kamerstukken.
 
 ### Note on memoization
 By default, `parlhist` stores all responses it gets in a raw format. If you want to re-create your database,
