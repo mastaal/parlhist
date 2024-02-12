@@ -1,7 +1,7 @@
 """
     parlhist/parlhistnl/crawler/kamerdossier.py
 
-    Copyright 2023, Martijn Staal <parlhist [at] martijn-staal.nl>
+    Copyright 2023, 2024 Martijn Staal <parlhist [at] martijn-staal.nl>
 
     Available under the EUPL-1.2, or, at your option, any later version.
 
@@ -64,7 +64,7 @@ def get_kamerstukken_in_kamerstukdossier(dossiernummer: str) -> list[tuple[str, 
                 logger.debug("From identifier %s, assumed dossiernummer %s, ondernummer %s", identifier, dossiernummer, ondernummer)
                 kamerstukken.append((dossiernummer, ondernummer))
             except Exception as exc:
-                logger.info("Couldn't convert %s to kst string", identifier)
+                logger.info("Couldn't convert %s to kst string, %s", identifier, exc)
         else:
             logger.debug("Found non-kamerstuk record %s", identifier)
 
@@ -86,7 +86,7 @@ def crawl_kamerstukdossier(dossiernummer: str, update=False, ignore_failure=Fals
             kamerstukken.append(crawl_kamerstuk(kamerstuk_string[0], kamerstuk_string[1], update=update))
         except Exception as exc:
             if ignore_failure:
-                logger.error("Received error while trying to crawl %s", kamerstuk_string)
+                logger.error("Received error while trying to crawl %s (%s)", kamerstuk_string, exc)
             else:
                 raise CrawlerException from exc
 

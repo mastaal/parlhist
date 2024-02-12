@@ -1,7 +1,7 @@
 """
     parlhist/parlhistnl/crawler/vergadering.py
 
-    Copyright 2023, Martijn Staal <parlhist [at] martijn-staal.nl>
+    Copyright 2023, 2024 Martijn Staal <parlhist [at] martijn-staal.nl>
 
     Available under the EUPL-1.2, or, at your option, any later version.
 
@@ -10,7 +10,6 @@
 
 import datetime
 import logging
-import time
 import xml.etree.ElementTree as ET
 
 from parlhistnl.models import Vergadering
@@ -33,6 +32,7 @@ def crawl_vergadering(vergaderjaar: str, nummer: int, kamer="tk") -> Vergadering
 
     item: int = 1
 
+    # TODO: Use the SRU API instead?
     base_url = f"https://zoek.officielebekendmakingen.nl/h-{kamer}-{vergaderjaar}-{nummer}-{item}"
     # html_url = f"{base_url}.html"
     meta_url = f"{base_url}/metadata.xml"
