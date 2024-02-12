@@ -26,7 +26,7 @@ def get_kamerstukken_in_kamerstukdossier(dossiernummer: str) -> list[tuple[str, 
 
     # overheid SRU documentation:
     # https://data.overheid.nl/sites/default/files/dataset/d0cca537-44ea-48cf-9880-fa21e1a7058f/resources/Handleiding%2BSRU%2B2.0.pdf
-    base_query = f"https://repository.overheid.nl/sru?query=(w.dossiernummer=={dossiernummer})&maximumRecords=1000&startRecord=1"
+    base_query = f"https://repository.overheid.nl/sru?query=(c.product-area==officielepublicaties AND w.dossiernummer=={dossiernummer})&maximumRecords=1000&startRecord=1"
 
     try:
         query_response = get_url_or_error(base_query)
