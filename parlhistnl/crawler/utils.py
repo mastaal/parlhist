@@ -135,7 +135,7 @@ def koop_sru_api_request_all(query: str) -> list[Element]:
     """
 
     start_record = 0
-    maximum_records = 100
+    maximum_records = 1000
     xml = koop_sru_api_request(query, start_record, maximum_records)
     records = xml.findall("sru:records/sru:record", XML_NAMESPACES)
 
