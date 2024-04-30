@@ -14,7 +14,7 @@ import xml.etree.ElementTree as ET
 from bs4 import BeautifulSoup
 
 from parlhistnl.models import Kamerstuk, KamerstukDossier
-from parlhistnl.crawler.utils import CrawlerException, get_url_or_error
+from parlhistnl.crawler.utils import CrawlerException, get_url_or_error, koop_sru_api_request_all, XML_NAMESPACES
 
 logger = logging.getLogger(__name__)
 
@@ -277,3 +277,23 @@ def crawl_kamerstuk(dossiernummer: str, ondernummer: str, update=False) -> Kamer
     logger.debug(kst)
 
     return kst
+
+
+def crawl_all_kamerstukken_within_koop_sru_query(query: str) -> list[Kamerstuk]:
+    """"Crawl all Kamerstukken which can be found by the given KOOP SRU query"""
+
+    results: list[Kamerstuk] = []
+    records = koop_sru_api_request_all(query)
+
+    for record in records:
+        try:
+            logger.debug("Crawling %s", record)
+            dossiernummer_record = record.find(".//overheidwetgeving:dossiernummer", XML_NAMESPACES).text
+            ondernummer_record = record.find(".//overheidwetgeving:ondernummer", XML_NAMESPACES).text
+
+            kst = crawl_kamerstuk(dossiernummer_record, ondernummer_record)
+            results.append(kst)
+        except CrawlerException:
+            logger.error("Failed to crawl kst-%s-%s", dossiernummer_record, ondernummer_record)
+
+    return results

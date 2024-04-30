@@ -13,12 +13,25 @@ import logging
 import pathlib
 import pickle
 import time
+import xml.etree.ElementTree as ET
+from xml.etree.ElementTree import Element
 
 import requests
 
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
+XML_NAMESPACES = {
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "dcterms": "http://purl.org/dc/terms/",
+    "psi": "http://psi.rechtspraak.nl/",
+    "rs": "http://www.rechtspraak.nl/schema/rechtspraak-1.0",
+    "ecli": "https://e-justice.europa.eu/ecli",
+    "overheidwetgeving": "http://standaarden.overheid.nl/wetgeving/",
+    "sru": "http://docs.oasis-open.org/ns/search-ws/sruResponse",
+    "gzd": "http://standaarden.overheid.nl/sru",
+    "c": "http://standaarden.overheid.nl/collectie/"
+}
 
 
 class CrawlerException(Exception):
@@ -88,3 +101,50 @@ def get_url_or_error(url: str, memoize=settings.PARLHIST_CRAWLER_DEFAULT_USE_MEM
             pickle.dump(response, pickle_file, pickle.HIGHEST_PROTOCOL)
 
     return response
+
+
+def koop_sru_api_request(query: str, start_record: int, maximum_records: int) -> Element:
+    """Query the KOOP SRU API, return the complete response xml."""
+    api_url = "https://repository.overheid.nl/sru"
+
+    resp = requests.get(
+        api_url,
+        params={
+            "httpAccept": "application/xml",
+            "startRecord": start_record,
+            "maximumRecords": maximum_records,
+            "query": query
+        },
+        timeout=25
+    )
+
+    if resp.status_code != 200:
+        logger.error("Non-200 status code while retrieving SRU API with query %s", query)
+        raise CrawlerException(f"Non-200 status code while retrieving SRU API with query {query}")
+
+    xml: Element = ET.fromstring(resp.text)
+
+    return xml
+
+
+def koop_sru_api_request_all(query: str) -> list[Element]:
+    """Query the KOOP SRU API. Returns all records for the query, even if this requires multiple requests.
+
+    See https://data.overheid.nl/sites/default/files/dataset/d0cca537-44ea-48cf-9880-fa21e1a7058f/resources/Handleiding%2BSRU%2B2.0.pdf
+    for more information about this API.
+    """
+
+    start_record = 0
+    maximum_records = 100
+    xml = koop_sru_api_request(query, start_record, maximum_records)
+    records = xml.findall("sru:records/sru:record", XML_NAMESPACES)
+
+    number_of_records = int(xml.find("sru:numberOfRecords", XML_NAMESPACES).text)
+
+    while len(records) < number_of_records:
+        # We need another request to get all the records!
+        start_record = start_record + maximum_records
+        xml = koop_sru_api_request(query, start_record, maximum_records)
+        records += xml.findall("sru:records/sru:record", XML_NAMESPACES)
+
+    return records
