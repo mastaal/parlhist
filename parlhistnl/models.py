@@ -152,3 +152,7 @@ class Kamerstuk(models.Model):
 
     def __str__(self) -> str:
         return f"Kamerstuk {self.hoofddossier.dossiernummer}-{self.ondernummer} {self.kamerstuktype}: {self.documenttitel}"
+
+    def url(self) -> str:
+        """Get the URL to this Kamerstuk"""
+        return f"https://zoek.officielebekendmakingen.nl/kst-{self.hoofddossier.dossiernummer}-{self.ondernummer}.html"
