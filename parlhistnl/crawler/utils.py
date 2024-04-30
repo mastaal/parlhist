@@ -1,7 +1,7 @@
 """
     parlhist/parlhistnl/crawler/utils.py
 
-    Copyright 2023, Martijn Staal <parlhist [at] martijn-staal.nl>
+    Copyright 2023, 2024, Martijn Staal <parlhist [at] martijn-staal.nl>
 
     Available under the EUPL-1.2, or, at your option, any later version.
 
@@ -77,6 +77,8 @@ def get_url_or_error(url: str, memoize=settings.PARLHIST_CRAWLER_DEFAULT_USE_MEM
         logger.info("Encoding is not the same as apparent encoding, adjusting encoding %s %s", response.encoding, response.apparent_encoding)
         response.encoding = response.apparent_encoding
 
+    __check_response_status_code(response)
+
     if memoize:
         full_path = __get_memoized_path(url)
 
@@ -84,7 +86,5 @@ def get_url_or_error(url: str, memoize=settings.PARLHIST_CRAWLER_DEFAULT_USE_MEM
 
         with open(full_path, "wb") as pickle_file:
             pickle.dump(response, pickle_file, pickle.HIGHEST_PROTOCOL)
-
-    __check_response_status_code(response)
 
     return response
