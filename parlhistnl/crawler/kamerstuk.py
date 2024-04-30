@@ -1,7 +1,7 @@
 """
     parlhist/parlhistnl/crawler/kamerstuk.py
 
-    Copyright 2023, Martijn Staal <parlhist [at] martijn-staal.nl>
+    Copyright 2023, 2024, Martijn Staal <parlhist [at] martijn-staal.nl>
 
     Available under the EUPL-1.2, or, at your option, any later version.
 
@@ -61,54 +61,88 @@ def __get_kamer(xml: ET.Element) -> str:
         return "tk"
 
 
-def __get_kamerstuktype_from_title(title: str, xml: ET.Element) -> str:
+def __get_kamerstuktype_from_title(title: str, record: ET.Element, is_tail=False) -> str:
     """Guess the kamerstuk document type from the title"""
 
-    logger.debug("Assessing kamerstuktype for title %s", title)
+    title = title.lower()
+    title = title.replace('0', 'o')
+
+    title_split = title.split('; ')
+    try:
+        title_tail = title_split[1]
+    except IndexError:
+        title_tail = ""
 
     try:
-        opgegeven_kamerstuktype = xml.find("metadata[@scheme='OVERHEIDop.KamerstukTypen']").get("content")
-        logger.debug("Opgegeven kamerstuktype: %s", opgegeven_kamerstuktype)
+        opgegeven_kamerstuktype = record.find(".//overheidwetgeving:subrubriek[@scheme='OVERHEIDop.KamerstukTypen']", XML_NAMESPACES).text
     except AttributeError:
-        logger.warning("Geen opgegeven kamerstuktype gevonden voor %s", title)
+        opgegeven_kamerstuktype = ""
 
-    if opgegeven_kamerstuktype == "Brief" or opgegeven_kamerstuktype == "Amendement" or opgegeven_kamerstuktype == "Motie":
-        return opgegeven_kamerstuktype
+    if (opgegeven_kamerstuktype == "Brief" or
+            title.startswith("brief")):
+        return Kamerstuk.KamerstukType.BRIEF
 
-    if opgegeven_kamerstuktype == "Voorstel van wet" or opgegeven_kamerstuktype == "Koninklijke boodschap":
-        return opgegeven_kamerstuktype
-
-    if opgegeven_kamerstuktype == "Memorie van toelichting" or opgegeven_kamerstuktype == "Jaarverslag":
-        return opgegeven_kamerstuktype
-
-    if opgegeven_kamerstuktype == "Verslag":
-        return opgegeven_kamerstuktype
-
-    if title.startswith("Motie") or title.startswith("Gewijzigde motie"):
-        return Kamerstuk.KamerstukType.MOTIE
-
-    if title.startswith("Amendement") or title.startswith("Gewijzigd amendement"):
+    if opgegeven_kamerstuktype == "Amendement":
         return Kamerstuk.KamerstukType.AMENDEMENT
 
-    if title.startswith("Voorstel van wet") or title.startswith("Gewijzigd voorstel van wet"):
+    if opgegeven_kamerstuktype == "Motie":
+        return Kamerstuk.KamerstukType.MOTIE
+
+    if opgegeven_kamerstuktype == "Voorstel van wet":
         return Kamerstuk.KamerstukType.WETSVOORSTEL
 
-    if title.startswith("Advies Afdeling advisering Raad van State"):
-        return Kamerstuk.KamerstukType.ADVIES_RVS
+    if (opgegeven_kamerstuktype == "Koninklijke boodschap" or
+            title.startswith("koninklijke boodschap")):
+        return Kamerstuk.KamerstukType.KONINKLIJKE_BOODSCHAP
 
-    if title.startswith("Voorlopig verslag") or title.startswith("Verslag") or title.startswith("Eindverslag") or title.startswith("Nader voorlopig verslag"):
-        return Kamerstuk.KamerstukType.VERSLAG
-
-    if title == "Nota naar aanleiding van het verslag":
-        return Kamerstuk.KamerstukType.NOTA_NA_VERSLAG
-
-    if title.lower().startswith("memorie van toelichting"):
+    if opgegeven_kamerstuktype == "Memorie van toelichting":
         return Kamerstuk.KamerstukType.MEMORIE_VAN_TOELICHTING
 
-    if title.lower().startswith("memorie van antwoord") or title.lower().startswith("nadere memorie van antwoord"):
+    if opgegeven_kamerstuktype == "Jaarverslag":
+        return Kamerstuk.KamerstukType.JAARVERSLAG
+
+    if opgegeven_kamerstuktype == "Verslag":
+        return Kamerstuk.KamerstukType.VERSLAG
+
+    if title.startswith("motie") or title.startswith("gewijzigde motie"):
+        return Kamerstuk.KamerstukType.MOTIE
+
+    if title.startswith("amendement") or title.startswith("gewijzigd amendement") or title.startswith("nader gewijzigd amendement"):
+        return Kamerstuk.KamerstukType.AMENDEMENT
+
+    if (title.startswith("voorstel van wet") or
+            title.startswith("gewijzigd voorstel van wet") or
+            title.startswith("ontwerp van wet")):
+        return Kamerstuk.KamerstukType.WETSVOORSTEL
+
+    if title.endswith("voorstel van wet") or title.endswith("gewijzigd voorstel van wet"):
+        return Kamerstuk.KamerstukType.WETSVOORSTEL
+
+    if title.startswith("advies afdeling advisering raad van state") or title.startswith("advies raad van state"):
+        return Kamerstuk.KamerstukType.ADVIES_RVS
+
+    if title.startswith("voorlopig verslag") or title.startswith("verslag") or title.startswith("eindverslag") or title.startswith("nader voorlopig verslag"):
+        return Kamerstuk.KamerstukType.VERSLAG
+
+    if title.endswith("voorlopig verslag") or title.endswith("verslag") or title.endswith("eindverslag") or title.startswith("nader voorlopig verslag"):
+        return Kamerstuk.KamerstukType.VERSLAG
+
+    if title.startswith("nota naar aanleiding van het") or title.endswith("nota naar aanleiding van het"):
+        return Kamerstuk.KamerstukType.NOTA_NA_VERSLAG
+
+    if title.startswith("memorie van toelichting"):
+        return Kamerstuk.KamerstukType.MEMORIE_VAN_TOELICHTING
+
+    if title.endswith("memorie van toelichting"):
+        return Kamerstuk.KamerstukType.MEMORIE_VAN_TOELICHTING
+
+    if title.startswith("memorie van antwoord") or title.startswith("nadere memorie van antwoord"):
         return Kamerstuk.KamerstukType.MEMORIE_VAN_ANTWOORD
 
-    if title.startswith("Voorlichting van de Afdeling advisering van de Raad van State"):
+    if title.endswith("memorie van antwoord") or title.endswith("nadere memorie van antwoord"):
+        return Kamerstuk.KamerstukType.MEMORIE_VAN_ANTWOORD
+
+    if title.startswith("voorlichting van de afdeling advisering van de raad van state"):
         return Kamerstuk.KamerstukType.VOORLICHTING_RVS
 
     if title.lower().startswith("jaarverslag"):
@@ -116,9 +150,17 @@ def __get_kamerstuktype_from_title(title: str, xml: ET.Element) -> str:
 
     if "nota van wijziging" in title.lower():
         # Beware, this lax check may result in errors
-        return "Nota van wijziging"
+        return Kamerstuk.KamerstukType.NOTA_VAN_WIJZIGING
 
-    return "Onbekend"
+    print(f"Can't determine KamerstukType for {title}, trying to run on the tail")
+
+    if not is_tail:
+        tail_type = __get_kamerstuktype_from_title(title_tail, record, is_tail=True)
+
+        print(f"Found type {tail_type} using tail {title_tail}")
+        return tail_type
+
+    return Kamerstuk.KamerstukType.ONBEKEND
 
 
 # TODO split this up just like handeling to enable easy re-indexing of existing kamerstukken
