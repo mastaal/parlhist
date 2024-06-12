@@ -28,7 +28,20 @@ def __get_dossiertitel(xml: ET.Element) -> str:
 def __get_documentitel(xml: ET.Element) -> str:
     """Get the dossiertitel from a parsed metadata xml"""
 
-    return xml.findall("metadata[@name='OVERHEIDop.documenttitel']")[0].get("content")
+    try:
+        return xml.findall("metadata[@name='OVERHEIDop.documenttitel']")[0].get("content")
+    except IndexError:
+        # Older metadata format (before 2010-01-01)
+        # No separate documenttitel is available, so we must extract it from DC.title.
+        # This requires some ugly code, because the titles can be in the form of:
+        # "Voorstel van wet van de leden Ten Hoopen, Slob en Van der Burg tot wijziging van het
+        # Wetboek van Strafrecht, de Leegstandwet, en enige andere wetten in verband met het verder
+        # terugdringen van kraken en leegstand (Wet kraken en leegstand); Amendement; Amendement Jansen
+        # ter vervanging van nr. 12 over het koppelen van de strafbaarstelling aan het voldaan hebben
+        # aan de meldingsplicht en het aanbod tot ingebruikname"
+        dctitle = xml.findall("metadata[@name='DC.title']")[0].get("content")
+
+        return "; ".join(dctitle.split("; ")[1:])
 
 
 def __get_indiener(xml: ET.Element) -> str:
@@ -66,6 +79,7 @@ def __get_kamerstuktype_from_title(title: str, record: ET.Element, is_tail=False
 
     title = title.lower()
     title = title.replace('0', 'o')
+    title = title.strip()
 
     title_split = title.split('; ')
     try:
