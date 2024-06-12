@@ -152,7 +152,7 @@ class Kamerstuk(models.Model):
     # TODO Add support for attachments to kamerstukken
 
     def __str__(self) -> str:
-        return f"Kamerstuk {self.hoofddossier.dossiernummer}-{self.ondernummer} {self.kamerstuktype}: {self.documenttitel}"
+        return f"Kamerstuk {self.hoofddossier.dossiernummer}-{self.ondernummer} {self.kamerstuktype}: {self.documenttitel} ({self.documentdatum})"
 
     def url(self) -> str:
         """Get the URL to this Kamerstuk"""
