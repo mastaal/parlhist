@@ -23,7 +23,10 @@ logger = logging.getLogger(__name__)
 def __get_documentdatum(xml: ET.Element) -> datetime.date:
     """Get the documentdatum from from a parsed metadata xml"""
 
-    date_str = xml.findall("metadata[@name='DCTERMS.issued']")[0].get("content")
+    try:
+        date_str = xml.findall("metadata[@name='DCTERMS.issued']")[0].get("content")
+    except IndexError:
+        date_str = xml.findall("metadata[@name='OVERHEIDop.datumOntvangst']")[0].get("content")
 
     date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
 
