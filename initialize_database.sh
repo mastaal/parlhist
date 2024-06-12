@@ -3,6 +3,7 @@
 source ./venv/bin/activate
 ./manage.py migrate
 
+./manage.py vergaderdag_crawl_full_vergaderjaar --kamer ek 20222023
 ./manage.py vergaderdag_crawl_full_vergaderjaar --kamer ek 20212022
 ./manage.py vergaderdag_crawl_full_vergaderjaar --kamer ek 20202021
 ./manage.py vergaderdag_crawl_full_vergaderjaar --kamer ek 20192020
@@ -15,6 +16,7 @@ source ./venv/bin/activate
 ./manage.py vergaderdag_crawl_full_vergaderjaar --kamer ek 20122013
 ./manage.py vergaderdag_crawl_full_vergaderjaar --kamer ek 20112012
 
+./manage.py vergaderdag_crawl_full_vergaderjaar --kamer tk 20222023
 ./manage.py vergaderdag_crawl_full_vergaderjaar --kamer tk 20212022
 ./manage.py vergaderdag_crawl_full_vergaderjaar --kamer tk 20202021
 ./manage.py vergaderdag_crawl_full_vergaderjaar --kamer tk 20192020
