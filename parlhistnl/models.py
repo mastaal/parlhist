@@ -135,6 +135,7 @@ class Kamerstuk(models.Model):
     raw_html = models.TextField()
     raw_metadata_xml = models.TextField()
 
+    documentdatum = models.DateField(help_text="Datum van het document volgens DCTERMS.issued", default=datetime.date(1800, 1, 1))
     toegevoegd_op = models.DateTimeField(auto_now_add=True)
     bijgewerkt_op = models.DateTimeField(auto_now=True)
 

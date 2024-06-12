@@ -8,6 +8,7 @@
     SPDX-License-Identifier: EUPL-1.2
 """
 
+import datetime
 import logging
 import xml.etree.ElementTree as ET
 
@@ -17,6 +18,16 @@ from parlhistnl.models import Kamerstuk, KamerstukDossier
 from parlhistnl.crawler.utils import CrawlerException, get_url_or_error, koop_sru_api_request_all, XML_NAMESPACES
 
 logger = logging.getLogger(__name__)
+
+
+def __get_documentdatum(xml: ET.Element) -> datetime.date:
+    """Get the documentdatum from from a parsed metadata xml"""
+
+    date_str = xml.findall("metadata[@name='DCTERMS.issued']")[0].get("content")
+
+    date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+
+    return date
 
 
 def __get_dossiertitel(xml: ET.Element) -> str:
@@ -212,6 +223,11 @@ def crawl_kamerstuk(dossiernummer: str, ondernummer: str, update=False) -> Kamer
     xml = ET.fromstring(meta_response.text)
 
     try:
+        documentdatum = __get_documentdatum(xml)
+    except IndexError as exc:
+        logger.error("Could not get documentdatum for %s %s, using fallback date 1800-01-01", dossiernummer, ondernummer)
+        documentdatum = datetime.date(1800, 1, 1)
+    try:
         documenttitel = __get_documentitel(xml)
     except IndexError as exc:
         logger.critical("Could not get documenttitel for %s %s", dossiernummer, ondernummer)
@@ -271,6 +287,7 @@ def crawl_kamerstuk(dossiernummer: str, ondernummer: str, update=False) -> Kamer
         existing_kst.tekst = tekst
         existing_kst.raw_html = inner_html
         existing_kst.raw_metadata_xml = meta_response.text
+        existing_kst.documentdatum = documentdatum
         existing_kst.save()
         kst = existing_kst
     else:
@@ -285,7 +302,8 @@ def crawl_kamerstuk(dossiernummer: str, ondernummer: str, update=False) -> Kamer
             indiener=indiener,
             tekst=tekst,
             raw_html=inner_html,
-            raw_metadata_xml=meta_response.text
+            raw_metadata_xml=meta_response.text,
+            documentdatum=documentdatum
         )
 
     logger.debug(kst)
@@ -293,7 +311,7 @@ def crawl_kamerstuk(dossiernummer: str, ondernummer: str, update=False) -> Kamer
     return kst
 
 
-def crawl_all_kamerstukken_within_koop_sru_query(query: str) -> list[Kamerstuk]:
+def crawl_all_kamerstukken_within_koop_sru_query(query: str, update=False) -> list[Kamerstuk]:
     """"Crawl all Kamerstukken which can be found by the given KOOP SRU query"""
 
     results: list[Kamerstuk] = []
@@ -305,7 +323,7 @@ def crawl_all_kamerstukken_within_koop_sru_query(query: str) -> list[Kamerstuk]:
             dossiernummer_record = record.find(".//overheidwetgeving:dossiernummer", XML_NAMESPACES).text
             ondernummer_record = record.find(".//overheidwetgeving:ondernummer", XML_NAMESPACES).text
 
-            kst = crawl_kamerstuk(dossiernummer_record, ondernummer_record)
+            kst = crawl_kamerstuk(dossiernummer_record, ondernummer_record, update=update)
             results.append(kst)
         except CrawlerException:
             logger.error("Failed to crawl kst-%s-%s", dossiernummer_record, ondernummer_record)
