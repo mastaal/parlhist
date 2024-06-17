@@ -138,6 +138,9 @@ def __get_kamerstuktype_from_title(title: str, record: ET.Element, is_tail=False
     if title.startswith("amendement") or title.startswith("gewijzigd amendement") or title.startswith("nader gewijzigd amendement"):
         return Kamerstuk.KamerstukType.AMENDEMENT
 
+    if title.startswith("tweede nader gewijzigd amendement") or title.startswith("derde nader gewijzigd amendement") or title.startswith("vierde nader gewijzigd amendement"):
+        return Kamerstuk.KamerstukType.AMENDEMENT
+
     if (title.startswith("voorstel van wet") or
             title.startswith("gewijzigd voorstel van wet") or
             title.startswith("ontwerp van wet")):
