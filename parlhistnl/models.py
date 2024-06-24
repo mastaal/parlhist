@@ -176,3 +176,45 @@ class Kamerstuk(models.Model):
     def url(self) -> str:
         """Get the URL to this Kamerstuk"""
         return f"https://zoek.officielebekendmakingen.nl/kst-{self.hoofddossier.dossiernummer}-{self.ondernummer}.html"
+
+
+class Staatsblad(models.Model):
+    """Model for a publication in the Staatsblad"""
+
+    jaargang = models.IntegerField()
+    nummer = models.IntegerField()
+
+    behandelde_dossiers = models.ManyToManyField(KamerstukDossier)
+
+    titel = models.TextField()
+    tekst = models.TextField()
+    raw_html = models.TextField()
+    raw_metadata_xml = models.TextField()
+
+    publicatiedatum = models.DateField()
+    ondertekendatum = models.DateField()
+
+    toegevoegd_op = models.DateTimeField(auto_now_add=True)
+    bijgewerkt_op = models.DateTimeField(auto_now=True)
+
+    class StaatsbladType(models.TextChoices):
+        """Specialized enum for Staatsblad types"""
+
+        WET = "Wet"
+        AMVB = "AMvB"
+        VERBETERBLAD = "Verbeterblad"
+        ONBEKEND = "Onbekend"
+
+    staatsblad_type = models.CharField(
+        max_length=256, choices=StaatsbladType.choices, default=StaatsbladType.ONBEKEND
+    )
+
+    class Meta:
+        """Meta information for django"""
+
+        indexes = [
+            models.Index(fields=["jaargang", "nummer"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"Staatsblad {self.jaargang}-{self.nummer} {self.staatsblad_type}: {self.titel} ({self.publicatiedatum})"

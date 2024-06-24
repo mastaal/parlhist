@@ -574,6 +574,8 @@ generated-members=command.style.SUCCESS,
                   ManyToManyField.all,
                   ManyToManyField.clear,
                   ManyToManyField.add,
+                  Staatsblad.objects.*,
+                  Staatsblad.DoesNotExist,
 
 # Tells whether to warn about missing members when the owner of the attribute
 # is inferred to be None.
