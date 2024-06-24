@@ -245,16 +245,22 @@ def __get_kamerstuktype_from_title(
 
 
 # TODO split this up just like handeling to enable easy re-indexing of existing kamerstukken
-def crawl_kamerstuk(dossiernummer: str, ondernummer: str, update=False) -> Kamerstuk:
+def crawl_kamerstuk(
+    dossiernummer: str, ondernummer: str, update=False, preferred_url=None
+) -> Kamerstuk:
     """Crawl a kamerstuk"""
 
     logger.info("Crawling kamerstuk %s, %s", dossiernummer, ondernummer)
 
-    base_url: str = (
-        f"https://zoek.officielebekendmakingen.nl/kst-{dossiernummer}-{ondernummer}"
-    )
-    html_url = f"{base_url}.html"
-    meta_url = f"{base_url}/metadata.xml"
+    if preferred_url is None:
+        base_url: str = (
+            f"https://zoek.officielebekendmakingen.nl/kst-{dossiernummer}-{ondernummer}"
+        )
+        html_url = f"{base_url}.html"
+        meta_url = f"{base_url}/metadata.xml"
+    else:
+        html_url: str = preferred_url
+        meta_url = html_url.replace(".html", "/metadata.xml")
 
     try:
         existing_kst = Kamerstuk.objects.get(
@@ -407,8 +413,18 @@ def crawl_all_kamerstukken_within_koop_sru_query(
                 ".//overheidwetgeving:ondernummer", XML_NAMESPACES
             ).text
 
+            try:
+                preferred_url = record.find(".//gzd:preferredUrl", XML_NAMESPACES).text
+                logger.debug("Found preferred url %s", preferred_url)
+            except AttributeError:
+                logger.warning("Couldn't find a preferred url for %s %s %s, falling back to default", dossiernummer_record, ondernummer_record, record)
+                preferred_url = None
+
             kst = crawl_kamerstuk(
-                dossiernummer_record, ondernummer_record, update=update
+                dossiernummer_record,
+                ondernummer_record,
+                update=update,
+                preferred_url=preferred_url,
             )
             results.append(kst)
         except CrawlerException:
