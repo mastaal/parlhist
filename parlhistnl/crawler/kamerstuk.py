@@ -431,5 +431,7 @@ def crawl_all_kamerstukken_within_koop_sru_query(
             logger.error(
                 "Failed to crawl kst-%s-%s", dossiernummer_record, ondernummer_record
             )
+        except Exception as exc:
+            logger.error("Got an unexpected exception %s in crawling kst %s %s", exc, dossiernummer_record, ondernummer_record)
 
     return results
