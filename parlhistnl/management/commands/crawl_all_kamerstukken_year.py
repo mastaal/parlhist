@@ -66,7 +66,11 @@ class Command(BaseCommand):
             default=2020,
             help="Which calendar year to crawl the kamerstukken of",
         )
-        parser.add_argument("--update", action="store_true", help="Update Kamerstukken already in the database")
+        parser.add_argument(
+            "--update",
+            action="store_true",
+            help="Update Kamerstukken already in the database",
+        )
 
     def handle(self, *args: Any, **options: Any) -> str | None:
         """Crawl one Vergadering and all its subitems"""
@@ -75,9 +79,15 @@ class Command(BaseCommand):
 
         koop_sru_query = f"(c.product-area==officielepublicaties AND dt.type=Kamerstuk AND dt.date >={year}-01-01 AND dt.date <= {year}-12-31)"
 
-        kamerstukken = crawl_all_kamerstukken_within_koop_sru_query(koop_sru_query, update=options["update"])
+        kamerstukken = crawl_all_kamerstukken_within_koop_sru_query(
+            koop_sru_query, update=options["update"]
+        )
 
-        logger.info("Crawling using management command with koop query %s with update=%s", koop_sru_query, options["update"])
+        logger.info(
+            "Crawling using management command with koop query %s with update=%s",
+            koop_sru_query,
+            options["update"],
+        )
 
         self.stdout.write(
             self.style.SUCCESS(

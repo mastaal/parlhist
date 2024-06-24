@@ -29,8 +29,18 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser: CommandParser) -> None:
         """Add arguments"""
-        parser.add_argument("vergaderjaar", type=str, help="Het vergaderjaar, zonder streepje, zoals 20212022")
-        parser.add_argument("--kamer", type=str, choices=["ek", "tk"], default="tk", help="Welke parlementaire kamer, standaard tk")
+        parser.add_argument(
+            "vergaderjaar",
+            type=str,
+            help="Het vergaderjaar, zonder streepje, zoals 20212022",
+        )
+        parser.add_argument(
+            "--kamer",
+            type=str,
+            choices=["ek", "tk"],
+            default="tk",
+            help="Welke parlementaire kamer, standaard tk",
+        )
 
     def handle(self, *args: Any, **options: Any) -> str | None:
         """Crawl all vergaderingen of a vergaderjaar."""
@@ -40,26 +50,36 @@ class Command(BaseCommand):
 
         while previous_errors <= 10:
             try:
-                vergadering = crawl_vergadering(options["vergaderjaar"], nummer, options["kamer"])
+                vergadering = crawl_vergadering(
+                    options["vergaderjaar"], nummer, options["kamer"]
+                )
 
                 previous_errors = 0
 
                 if vergadering is not None:
                     self.stdout.write(
-                        self.style.SUCCESS(f"Successfully crawled {vergadering}")  # pylint: disable=no-member
+                        self.style.SUCCESS(
+                            f"Successfully crawled {vergadering}"
+                        )  # pylint: disable=no-member
                     )
                 else:
                     self.stdout.write(
-                        self.style.SUCCESS("Aanhangsel already exists")  # pylint: disable=no-member
+                        self.style.SUCCESS(
+                            "Aanhangsel already exists"
+                        )  # pylint: disable=no-member
                     )
             except CrawlerException:
                 previous_errors += 1
                 self.stdout.write(
-                    self.style.ERROR(f"Couldn't crawl {nummer}")  # pylint: disable=no-member
+                    self.style.ERROR(
+                        f"Couldn't crawl {nummer}"
+                    )  # pylint: disable=no-member
                 )
 
             nummer += 1
 
         self.stdout.write(
-            self.style.SUCCESS(f"Successfully crawled vergaderingen in vergaderjaar {options['vergaderjaar']}")  # pylint: disable=no-member
+            self.style.SUCCESS(
+                f"Successfully crawled vergaderingen in vergaderjaar {options['vergaderjaar']}"
+            )  # pylint: disable=no-member
         )

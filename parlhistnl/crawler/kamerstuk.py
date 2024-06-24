@@ -15,7 +15,12 @@ import xml.etree.ElementTree as ET
 from bs4 import BeautifulSoup
 
 from parlhistnl.models import Kamerstuk, KamerstukDossier
-from parlhistnl.crawler.utils import CrawlerException, get_url_or_error, koop_sru_api_request_all, XML_NAMESPACES
+from parlhistnl.crawler.utils import (
+    CrawlerException,
+    get_url_or_error,
+    koop_sru_api_request_all,
+    XML_NAMESPACES,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +31,9 @@ def __get_documentdatum(xml: ET.Element) -> datetime.date:
     try:
         date_str = xml.findall("metadata[@name='DCTERMS.issued']")[0].get("content")
     except IndexError:
-        date_str = xml.findall("metadata[@name='OVERHEIDop.datumOntvangst']")[0].get("content")
+        date_str = xml.findall("metadata[@name='OVERHEIDop.datumOntvangst']")[0].get(
+            "content"
+        )
 
     date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
 
@@ -43,7 +50,9 @@ def __get_documentitel(xml: ET.Element) -> str:
     """Get the dossiertitel from a parsed metadata xml"""
 
     try:
-        return xml.findall("metadata[@name='OVERHEIDop.documenttitel']")[0].get("content")
+        return xml.findall("metadata[@name='OVERHEIDop.documenttitel']")[0].get(
+            "content"
+        )
     except IndexError:
         # Older metadata format (before 2010-01-01)
         # No separate documenttitel is available, so we must extract it from DC.title.
@@ -70,7 +79,11 @@ def __get_indiener(xml: ET.Element) -> str:
 def __get_vergaderjaar(xml: ET.Element) -> str:
     """Get the dossiertitel from a parsed metadata xml"""
 
-    return xml.findall("metadata[@name='OVERHEIDop.vergaderjaar']")[0].get("content").replace("-", "")
+    return (
+        xml.findall("metadata[@name='OVERHEIDop.vergaderjaar']")[0]
+        .get("content")
+        .replace("-", "")
+    )
 
 
 def __get_kamer(xml: ET.Element) -> str:
@@ -88,26 +101,30 @@ def __get_kamer(xml: ET.Element) -> str:
         return "tk"
 
 
-def __get_kamerstuktype_from_title(title: str, record: ET.Element, is_tail=False) -> str:
+def __get_kamerstuktype_from_title(
+    title: str, record: ET.Element, is_tail=False
+) -> str:
     """Guess the kamerstuk document type from the title"""
 
     title = title.lower()
-    title = title.replace('0', 'o')
+    title = title.replace("0", "o")
     title = title.strip()
 
-    title_split = title.split('; ')
+    title_split = title.split("; ")
     try:
         title_tail = title_split[1]
     except IndexError:
         title_tail = ""
 
     try:
-        opgegeven_kamerstuktype = record.find(".//overheidwetgeving:subrubriek[@scheme='OVERHEIDop.KamerstukTypen']", XML_NAMESPACES).text
+        opgegeven_kamerstuktype = record.find(
+            ".//overheidwetgeving:subrubriek[@scheme='OVERHEIDop.KamerstukTypen']",
+            XML_NAMESPACES,
+        ).text
     except AttributeError:
         opgegeven_kamerstuktype = ""
 
-    if (opgegeven_kamerstuktype == "Brief" or
-            title.startswith("brief")):
+    if opgegeven_kamerstuktype == "Brief" or title.startswith("brief"):
         return Kamerstuk.KamerstukType.BRIEF
 
     if opgegeven_kamerstuktype == "Amendement":
@@ -119,8 +136,9 @@ def __get_kamerstuktype_from_title(title: str, record: ET.Element, is_tail=False
     if opgegeven_kamerstuktype == "Voorstel van wet":
         return Kamerstuk.KamerstukType.WETSVOORSTEL
 
-    if (opgegeven_kamerstuktype == "Koninklijke boodschap" or
-            title.startswith("koninklijke boodschap")):
+    if opgegeven_kamerstuktype == "Koninklijke boodschap" or title.startswith(
+        "koninklijke boodschap"
+    ):
         return Kamerstuk.KamerstukType.KONINKLIJKE_BOODSCHAP
 
     if opgegeven_kamerstuktype == "Memorie van toelichting":
@@ -135,30 +153,56 @@ def __get_kamerstuktype_from_title(title: str, record: ET.Element, is_tail=False
     if title.startswith("motie") or title.startswith("gewijzigde motie"):
         return Kamerstuk.KamerstukType.MOTIE
 
-    if title.startswith("amendement") or title.startswith("gewijzigd amendement") or title.startswith("nader gewijzigd amendement"):
+    if (
+        title.startswith("amendement")
+        or title.startswith("gewijzigd amendement")
+        or title.startswith("nader gewijzigd amendement")
+    ):
         return Kamerstuk.KamerstukType.AMENDEMENT
 
-    if title.startswith("tweede nader gewijzigd amendement") or title.startswith("derde nader gewijzigd amendement") or title.startswith("vierde nader gewijzigd amendement"):
+    if (
+        title.startswith("tweede nader gewijzigd amendement")
+        or title.startswith("derde nader gewijzigd amendement")
+        or title.startswith("vierde nader gewijzigd amendement")
+    ):
         return Kamerstuk.KamerstukType.AMENDEMENT
 
-    if (title.startswith("voorstel van wet") or
-            title.startswith("gewijzigd voorstel van wet") or
-            title.startswith("ontwerp van wet")):
+    if (
+        title.startswith("voorstel van wet")
+        or title.startswith("gewijzigd voorstel van wet")
+        or title.startswith("ontwerp van wet")
+    ):
         return Kamerstuk.KamerstukType.WETSVOORSTEL
 
-    if title.endswith("voorstel van wet") or title.endswith("gewijzigd voorstel van wet"):
+    if title.endswith("voorstel van wet") or title.endswith(
+        "gewijzigd voorstel van wet"
+    ):
         return Kamerstuk.KamerstukType.WETSVOORSTEL
 
-    if title.startswith("advies afdeling advisering raad van state") or title.startswith("advies raad van state"):
+    if title.startswith(
+        "advies afdeling advisering raad van state"
+    ) or title.startswith("advies raad van state"):
         return Kamerstuk.KamerstukType.ADVIES_RVS
 
-    if title.startswith("voorlopig verslag") or title.startswith("verslag") or title.startswith("eindverslag") or title.startswith("nader voorlopig verslag"):
+    if (
+        title.startswith("voorlopig verslag")
+        or title.startswith("verslag")
+        or title.startswith("eindverslag")
+        or title.startswith("nader voorlopig verslag")
+    ):
         return Kamerstuk.KamerstukType.VERSLAG
 
-    if title.endswith("voorlopig verslag") or title.endswith("verslag") or title.endswith("eindverslag") or title.startswith("nader voorlopig verslag"):
+    if (
+        title.endswith("voorlopig verslag")
+        or title.endswith("verslag")
+        or title.endswith("eindverslag")
+        or title.startswith("nader voorlopig verslag")
+    ):
         return Kamerstuk.KamerstukType.VERSLAG
 
-    if title.startswith("nota naar aanleiding van het") or title.endswith("nota naar aanleiding van het"):
+    if title.startswith("nota naar aanleiding van het") or title.endswith(
+        "nota naar aanleiding van het"
+    ):
         return Kamerstuk.KamerstukType.NOTA_NA_VERSLAG
 
     if title.startswith("memorie van toelichting"):
@@ -167,13 +211,19 @@ def __get_kamerstuktype_from_title(title: str, record: ET.Element, is_tail=False
     if title.endswith("memorie van toelichting"):
         return Kamerstuk.KamerstukType.MEMORIE_VAN_TOELICHTING
 
-    if title.startswith("memorie van antwoord") or title.startswith("nadere memorie van antwoord"):
+    if title.startswith("memorie van antwoord") or title.startswith(
+        "nadere memorie van antwoord"
+    ):
         return Kamerstuk.KamerstukType.MEMORIE_VAN_ANTWOORD
 
-    if title.endswith("memorie van antwoord") or title.endswith("nadere memorie van antwoord"):
+    if title.endswith("memorie van antwoord") or title.endswith(
+        "nadere memorie van antwoord"
+    ):
         return Kamerstuk.KamerstukType.MEMORIE_VAN_ANTWOORD
 
-    if title.startswith("voorlichting van de afdeling advisering van de raad van state"):
+    if title.startswith(
+        "voorlichting van de afdeling advisering van de raad van state"
+    ):
         return Kamerstuk.KamerstukType.VOORLICHTING_RVS
 
     if title.lower().startswith("jaarverslag"):
@@ -200,12 +250,16 @@ def crawl_kamerstuk(dossiernummer: str, ondernummer: str, update=False) -> Kamer
 
     logger.info("Crawling kamerstuk %s, %s", dossiernummer, ondernummer)
 
-    base_url: str = f"https://zoek.officielebekendmakingen.nl/kst-{dossiernummer}-{ondernummer}"
+    base_url: str = (
+        f"https://zoek.officielebekendmakingen.nl/kst-{dossiernummer}-{ondernummer}"
+    )
     html_url = f"{base_url}.html"
     meta_url = f"{base_url}/metadata.xml"
 
     try:
-        existing_kst = Kamerstuk.objects.get(hoofddossier__dossiernummer=dossiernummer, ondernummer=ondernummer)
+        existing_kst = Kamerstuk.objects.get(
+            hoofddossier__dossiernummer=dossiernummer, ondernummer=ondernummer
+        )
         logger.info("Kamerstuk already exists")
         if not update:
             logger.info("Update set to false, returning existing kamerstuk")
@@ -231,17 +285,25 @@ def crawl_kamerstuk(dossiernummer: str, ondernummer: str, update=False) -> Kamer
     try:
         documentdatum = __get_documentdatum(xml)
     except IndexError as exc:
-        logger.error("Could not get documentdatum for %s %s, using fallback date 1800-01-01", dossiernummer, ondernummer)
+        logger.error(
+            "Could not get documentdatum for %s %s, using fallback date 1800-01-01",
+            dossiernummer,
+            ondernummer,
+        )
         documentdatum = datetime.date(1800, 1, 1)
     try:
         documenttitel = __get_documentitel(xml)
     except IndexError as exc:
-        logger.critical("Could not get documenttitel for %s %s", dossiernummer, ondernummer)
+        logger.critical(
+            "Could not get documenttitel for %s %s", dossiernummer, ondernummer
+        )
         raise CrawlerException("Failed to get core metadata") from exc
     try:
         dossiertitel = __get_dossiertitel(xml)
     except IndexError as exc:
-        logger.critical("Could not get dossiertitel for %s %s", dossiernummer, ondernummer)
+        logger.critical(
+            "Could not get dossiertitel for %s %s", dossiernummer, ondernummer
+        )
         raise CrawlerException("Failed to get core metadata") from exc
     try:
         indiener = __get_indiener(xml)
@@ -257,16 +319,22 @@ def crawl_kamerstuk(dossiernummer: str, ondernummer: str, update=False) -> Kamer
     try:
         vergaderjaar = __get_vergaderjaar(xml)
     except IndexError as exc:
-        logger.critical("Could not get vergaderjaar for %s %s", dossiernummer, ondernummer)
+        logger.critical(
+            "Could not get vergaderjaar for %s %s", dossiernummer, ondernummer
+        )
         raise CrawlerException("Failed to get core metadata") from exc
 
     try:
         kamerstuktype = __get_kamerstuktype_from_title(documenttitel, xml)
     except IndexError:
-        logger.error("Could not succesfully kamerstuktype for %s %s", dossiernummer, ondernummer)
+        logger.error(
+            "Could not succesfully kamerstuktype for %s %s", dossiernummer, ondernummer
+        )
 
     # TODO add support for multi-dossier kamerstukken
-    dossier, created = KamerstukDossier.objects.get_or_create(dossiernummer=dossiernummer)
+    dossier, created = KamerstukDossier.objects.get_or_create(
+        dossiernummer=dossiernummer
+    )
     if created or update:
         dossier.dossiertitel = dossiertitel
         dossier.save()
@@ -277,7 +345,11 @@ def crawl_kamerstuk(dossiernummer: str, ondernummer: str, update=False) -> Kamer
     elems = soup.select("article div#broodtekst.stuk.broodtekst-container")
 
     if len(elems) > 1:
-        logger.info("Got multiple matches where only one was expected %s %s", dossiernummer, ondernummer)
+        logger.info(
+            "Got multiple matches where only one was expected %s %s",
+            dossiernummer,
+            ondernummer,
+        )
 
     inner_html = str(elems[0])
 
@@ -309,7 +381,7 @@ def crawl_kamerstuk(dossiernummer: str, ondernummer: str, update=False) -> Kamer
             tekst=tekst,
             raw_html=inner_html,
             raw_metadata_xml=meta_response.text,
-            documentdatum=documentdatum
+            documentdatum=documentdatum,
         )
 
     logger.debug(kst)
@@ -317,8 +389,10 @@ def crawl_kamerstuk(dossiernummer: str, ondernummer: str, update=False) -> Kamer
     return kst
 
 
-def crawl_all_kamerstukken_within_koop_sru_query(query: str, update=False) -> list[Kamerstuk]:
-    """"Crawl all Kamerstukken which can be found by the given KOOP SRU query"""
+def crawl_all_kamerstukken_within_koop_sru_query(
+    query: str, update=False
+) -> list[Kamerstuk]:
+    """ "Crawl all Kamerstukken which can be found by the given KOOP SRU query"""
 
     results: list[Kamerstuk] = []
     records = koop_sru_api_request_all(query)
@@ -326,12 +400,20 @@ def crawl_all_kamerstukken_within_koop_sru_query(query: str, update=False) -> li
     for record in records:
         try:
             logger.debug("Crawling %s", record)
-            dossiernummer_record = record.find(".//overheidwetgeving:dossiernummer", XML_NAMESPACES).text
-            ondernummer_record = record.find(".//overheidwetgeving:ondernummer", XML_NAMESPACES).text
+            dossiernummer_record = record.find(
+                ".//overheidwetgeving:dossiernummer", XML_NAMESPACES
+            ).text
+            ondernummer_record = record.find(
+                ".//overheidwetgeving:ondernummer", XML_NAMESPACES
+            ).text
 
-            kst = crawl_kamerstuk(dossiernummer_record, ondernummer_record, update=update)
+            kst = crawl_kamerstuk(
+                dossiernummer_record, ondernummer_record, update=update
+            )
             results.append(kst)
         except CrawlerException:
-            logger.error("Failed to crawl kst-%s-%s", dossiernummer_record, ondernummer_record)
+            logger.error(
+                "Failed to crawl kst-%s-%s", dossiernummer_record, ondernummer_record
+            )
 
     return results

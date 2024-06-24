@@ -16,3 +16,5 @@ pip-licenses>=4.3.3
 pipdeptree>=2.13.0
 
 #jupyter
+
+black

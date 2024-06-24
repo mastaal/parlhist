@@ -30,7 +30,7 @@ XML_NAMESPACES = {
     "overheidwetgeving": "http://standaarden.overheid.nl/wetgeving/",
     "sru": "http://docs.oasis-open.org/ns/search-ws/sruResponse",
     "gzd": "http://standaarden.overheid.nl/sru",
-    "c": "http://standaarden.overheid.nl/collectie/"
+    "c": "http://standaarden.overheid.nl/collectie/",
 }
 
 
@@ -41,7 +41,9 @@ class CrawlerException(Exception):
 def __get_memoized_path(url: str) -> str:
     """Get the full memoized path given a url"""
     fn = hashlib.sha1(url.encode("utf-8")).hexdigest()
-    base_path = pathlib.Path(f"{settings.PARLHIST_CRAWLER_MEMOIZE_PATH}/{fn[0]}/{fn[1]}")
+    base_path = pathlib.Path(
+        f"{settings.PARLHIST_CRAWLER_MEMOIZE_PATH}/{fn[0]}/{fn[1]}"
+    )
     base_path.mkdir(mode=0o755, parents=True, exist_ok=True)
 
     full_path = f"{base_path}/{fn}"
@@ -53,11 +55,17 @@ def __check_response_status_code(response: requests.Response) -> None:
     """Check the status code of a response; if it is not 200, throw an CrawlerException"""
 
     if response.status_code != 200:
-        logger.error("Received not-OK status code from page get %s", response.status_code)
-        raise CrawlerException(f"Received not-OK status code from page get {response.status_code}")
+        logger.error(
+            "Received not-OK status code from page get %s", response.status_code
+        )
+        raise CrawlerException(
+            f"Received not-OK status code from page get {response.status_code}"
+        )
 
 
-def get_url_or_error(url: str, memoize=settings.PARLHIST_CRAWLER_DEFAULT_USE_MEMOIZATION) -> requests.Response:
+def get_url_or_error(
+    url: str, memoize=settings.PARLHIST_CRAWLER_DEFAULT_USE_MEMOIZATION
+) -> requests.Response:
     """Try to get a page, or throw a CrawlerException if it fails
 
     By default, it memoizes the requests in order to lower issues at the receiver end, but to
@@ -81,13 +89,19 @@ def get_url_or_error(url: str, memoize=settings.PARLHIST_CRAWLER_DEFAULT_USE_MEM
 
     try:
         response = requests.get(url, timeout=30)
-        logger.debug("Actual request was sent, sleeping to prevent service disruption at receiver end")
+        logger.debug(
+            "Actual request was sent, sleeping to prevent service disruption at receiver end"
+        )
         time.sleep(0.25)
     except requests.exceptions.ReadTimeout as exc:
         raise CrawlerException from exc
 
     if response.encoding != response.apparent_encoding:
-        logger.info("Encoding is not the same as apparent encoding, adjusting encoding %s %s", response.encoding, response.apparent_encoding)
+        logger.info(
+            "Encoding is not the same as apparent encoding, adjusting encoding %s %s",
+            response.encoding,
+            response.apparent_encoding,
+        )
         response.encoding = response.apparent_encoding
 
     __check_response_status_code(response)
@@ -103,7 +117,9 @@ def get_url_or_error(url: str, memoize=settings.PARLHIST_CRAWLER_DEFAULT_USE_MEM
     return response
 
 
-def koop_sru_api_request(query: str, start_record: int, maximum_records: int) -> Element:
+def koop_sru_api_request(
+    query: str, start_record: int, maximum_records: int
+) -> Element:
     """Query the KOOP SRU API, return the complete response xml."""
     api_url = "https://repository.overheid.nl/sru"
 
@@ -113,14 +129,18 @@ def koop_sru_api_request(query: str, start_record: int, maximum_records: int) ->
             "httpAccept": "application/xml",
             "startRecord": start_record,
             "maximumRecords": maximum_records,
-            "query": query
+            "query": query,
         },
-        timeout=25
+        timeout=25,
     )
 
     if resp.status_code != 200:
-        logger.error("Non-200 status code while retrieving SRU API with query %s", query)
-        raise CrawlerException(f"Non-200 status code while retrieving SRU API with query {query}")
+        logger.error(
+            "Non-200 status code while retrieving SRU API with query %s", query
+        )
+        raise CrawlerException(
+            f"Non-200 status code while retrieving SRU API with query {query}"
+        )
 
     xml: Element = ET.fromstring(resp.text)
 

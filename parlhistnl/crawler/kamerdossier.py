@@ -31,18 +31,30 @@ def get_kamerstukken_in_kamerstukdossier(dossiernummer: str) -> list[tuple[str, 
     try:
         query_response = get_url_or_error(base_query)
     except CrawlerException as exc:
-        logger.error("Received exception %s when trying to query the kamerstukken in dossier %s", exc, dossiernummer)
-        raise CrawlerException(f"Received exception when trying to query the kamerstukken in dossier {dossiernummer}") from exc
+        logger.error(
+            "Received exception %s when trying to query the kamerstukken in dossier %s",
+            exc,
+            dossiernummer,
+        )
+        raise CrawlerException(
+            f"Received exception when trying to query the kamerstukken in dossier {dossiernummer}"
+        ) from exc
 
     xml: ET.Element = ET.fromstring(query_response.text)
 
-    number_of_records = int(xml.find("{http://docs.oasis-open.org/ns/search-ws/sruResponse}numberOfRecords").text)
+    number_of_records = int(
+        xml.find(
+            "{http://docs.oasis-open.org/ns/search-ws/sruResponse}numberOfRecords"
+        ).text
+    )
 
     if number_of_records > 1000:
         logger.critical("More than 1000 results in a kamerdossier!")
         # TODO, implement this case
 
-    records_xml: list[ET.Element] = xml.find("{http://docs.oasis-open.org/ns/search-ws/sruResponse}records").findall("{http://docs.oasis-open.org/ns/search-ws/sruResponse}record")
+    records_xml: list[ET.Element] = xml.find(
+        "{http://docs.oasis-open.org/ns/search-ws/sruResponse}records"
+    ).findall("{http://docs.oasis-open.org/ns/search-ws/sruResponse}record")
 
     kamerstukken: list[str] = []
 
@@ -56,12 +68,17 @@ def get_kamerstukken_in_kamerstukdossier(dossiernummer: str) -> list[tuple[str, 
                 # Seems to be working now?
                 if identifier[-2] == "n":
                     # this is a herdruk of an existing kamerstuk!
-                    dossiernummer: str = '-'.join(identifier[4:-3].split('-')[:-1])
-                    ondernummer: str = '-'.join(identifier[4:].split('-')[-2:])
+                    dossiernummer: str = "-".join(identifier[4:-3].split("-")[:-1])
+                    ondernummer: str = "-".join(identifier[4:].split("-")[-2:])
                 else:
-                    dossiernummer: str = '-'.join(identifier[4:].split('-')[:-1])
-                    ondernummer: str = identifier[4:].split('-')[-1]
-                logger.debug("From identifier %s, assumed dossiernummer %s, ondernummer %s", identifier, dossiernummer, ondernummer)
+                    dossiernummer: str = "-".join(identifier[4:].split("-")[:-1])
+                    ondernummer: str = identifier[4:].split("-")[-1]
+                logger.debug(
+                    "From identifier %s, assumed dossiernummer %s, ondernummer %s",
+                    identifier,
+                    dossiernummer,
+                    ondernummer,
+                )
                 kamerstukken.append((dossiernummer, ondernummer))
             except Exception as exc:
                 logger.info("Couldn't convert %s to kst string, %s", identifier, exc)
@@ -71,7 +88,9 @@ def get_kamerstukken_in_kamerstukdossier(dossiernummer: str) -> list[tuple[str, 
     return kamerstukken
 
 
-def crawl_kamerstukdossier(dossiernummer: str, update=False, ignore_failure=False) -> list[Kamerstuk]:
+def crawl_kamerstukdossier(
+    dossiernummer: str, update=False, ignore_failure=False
+) -> list[Kamerstuk]:
     """Crawl all kamerstukken in a kamerstukdossier"""
 
     logger.info("Crawling kamerstukdossier %s", dossiernummer)
@@ -83,10 +102,16 @@ def crawl_kamerstukdossier(dossiernummer: str, update=False, ignore_failure=Fals
     for kamerstuk_string in str_kamerstukken:
         logger.info("Crawling %s", kamerstuk_string)
         try:
-            kamerstukken.append(crawl_kamerstuk(kamerstuk_string[0], kamerstuk_string[1], update=update))
+            kamerstukken.append(
+                crawl_kamerstuk(kamerstuk_string[0], kamerstuk_string[1], update=update)
+            )
         except Exception as exc:
             if ignore_failure:
-                logger.error("Received error while trying to crawl %s (%s)", kamerstuk_string, exc)
+                logger.error(
+                    "Received error while trying to crawl %s (%s)",
+                    kamerstuk_string,
+                    exc,
+                )
             else:
                 raise CrawlerException from exc
 

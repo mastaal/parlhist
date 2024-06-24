@@ -29,23 +29,41 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser: CommandParser) -> None:
         """Add arguments"""
-        parser.add_argument("vergaderjaar", type=str, help="Het vergaderjaar, zonder streepje, zoals 20212022")
-        parser.add_argument("nummer", type=int, help="Het nummer van het aanhangsel, zoals 42")
-        parser.add_argument("--kamer", type=str, choices=["ek", "tk"], default="tk", help="Welke parlementaire kamer, standaard tk")
+        parser.add_argument(
+            "vergaderjaar",
+            type=str,
+            help="Het vergaderjaar, zonder streepje, zoals 20212022",
+        )
+        parser.add_argument(
+            "nummer", type=int, help="Het nummer van het aanhangsel, zoals 42"
+        )
+        parser.add_argument(
+            "--kamer",
+            type=str,
+            choices=["ek", "tk"],
+            default="tk",
+            help="Welke parlementaire kamer, standaard tk",
+        )
 
     def handle(self, *args: Any, **options: Any) -> str | None:
         """Crawl one Vergadering and all its subitems"""
 
-        vergaderdag: Vergadering = crawl_vergadering(options['vergaderjaar'], options['nummer'], options["kamer"])
+        vergaderdag: Vergadering = crawl_vergadering(
+            options["vergaderjaar"], options["nummer"], options["kamer"]
+        )
 
         handelingen = Handeling.objects.filter(vergadering=vergaderdag)
 
         self.stdout.write(
-            self.style.SUCCESS(f"Successfully created {vergaderdag}")  # pylint: disable=no-member
+            self.style.SUCCESS(
+                f"Successfully created {vergaderdag}"
+            )  # pylint: disable=no-member
         )
 
         self.stdout.write(
-            self.style.SUCCESS("Crawled the following subitems:")  # pylint: disable=no-member
+            self.style.SUCCESS(
+                "Crawled the following subitems:"
+            )  # pylint: disable=no-member
         )
         for handeling in handelingen:
             self.stdout.write(

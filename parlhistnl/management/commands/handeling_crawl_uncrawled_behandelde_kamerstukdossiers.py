@@ -29,7 +29,9 @@ class Command(BaseCommand):
     def handle(self, *args: Any, **options: Any) -> str | None:
         """Crawl one Vergadering and all its subitems"""
 
-        handelingen = Handeling.objects.exclude(data__uncrawled__behandelde_kamerstukdossiers=[])
+        handelingen = Handeling.objects.exclude(
+            data__uncrawled__behandelde_kamerstukdossiers=[]
+        )
 
         for handeling in handelingen:
             logger.info("Crawling behandelde kamerstukken for %s", handeling)
@@ -38,7 +40,13 @@ class Command(BaseCommand):
                 kamerstukken = crawl_uncrawled_behandelde_kamerstukdossiers(handeling)
 
                 self.stdout.write(
-                    self.style.SUCCESS(f"Successfully created {kamerstukken}")  # pylint: disable=no-member
+                    self.style.SUCCESS(
+                        f"Successfully created {kamerstukken}"
+                    )  # pylint: disable=no-member
                 )
             except Exception as exc:
-                logger.critical("Failed to crawl uncrawled behandelde kamerstukdossiers for %s (%s)", handeling, exc)
+                logger.critical(
+                    "Failed to crawl uncrawled behandelde kamerstukdossiers for %s (%s)",
+                    handeling,
+                    exc,
+                )

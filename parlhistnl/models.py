@@ -18,9 +18,14 @@ logger = logging.getLogger(__name__)
 
 class Vergadering(models.Model):
     """Model for a plenary meeting"""
+
     vergaderjaar = models.CharField(max_length=8)
     nummer = models.IntegerField()
-    kamer = models.CharField(max_length=2, choices=[("ek", "Eerste Kamer"), ("tk", "Tweede Kamer")], default="tk")
+    kamer = models.CharField(
+        max_length=2,
+        choices=[("ek", "Eerste Kamer"), ("tk", "Tweede Kamer")],
+        default="tk",
+    )
 
     vergaderdatum = models.DateField(default=datetime.date(year=1800, month=1, day=1))
 
@@ -79,6 +84,7 @@ class Handeling(models.Model):
 
 class KamerstukDossier(models.Model):
     """Model for a kamerstukdossier"""
+
     dossiernummer = models.CharField(max_length=64)
     dossiertitel = models.TextField()
 
@@ -98,6 +104,7 @@ class KamerstukDossier(models.Model):
 
 class Kamerstuk(models.Model):
     """Model for a single kamerstuk"""
+
     vergaderjaar = models.CharField(max_length=8)
     hoofddossier = models.ForeignKey(KamerstukDossier, on_delete=models.CASCADE)
 
@@ -107,16 +114,23 @@ class Kamerstuk(models.Model):
     # Primary ondernummer
     # Must also be able to be characters for EK
     ondernummer = models.CharField(max_length=64)
-    kamer = models.CharField(max_length=2, choices=[("ek", "Eerste Kamer"), ("tk", "Tweede Kamer")], default="tk")
+    kamer = models.CharField(
+        max_length=2,
+        choices=[("ek", "Eerste Kamer"), ("tk", "Tweede Kamer")],
+        default="tk",
+    )
 
     class KamerstukType(models.TextChoices):
         """Specialized enum for kamerstuk types"""
+
         KONINKLIJKE_BOODSCHAP = "Koninklijke boodschap"
         GELEIDENDE_BRIEF = "Geleidende brief"
         WETSVOORSTEL = "Voorstel van wet"
         MEMORIE_VAN_TOELICHTING = "Memorie van toelichting"
         ADVIES_RVS = "Advies Raad van State"
-        VOORLICHTING_RVS = "Voorlichting van de Afdeling advisering van de Raad van State"
+        VOORLICHTING_RVS = (
+            "Voorlichting van de Afdeling advisering van de Raad van State"
+        )
         VERSLAG = "Verslag"
         NOTA_NA_VERSLAG = "Nota naar aanleiding van het verslag"
         NOTA_VAN_WIJZIGING = "Nota van wijziging"
@@ -127,7 +141,9 @@ class Kamerstuk(models.Model):
         JAARVERSLAG = "Jaarverslag"
         ONBEKEND = "Onbekend"
 
-    kamerstuktype = models.CharField(max_length=256, choices=KamerstukType.choices, default=KamerstukType.ONBEKEND)
+    kamerstuktype = models.CharField(
+        max_length=256, choices=KamerstukType.choices, default=KamerstukType.ONBEKEND
+    )
     documenttitel = models.TextField()
     indiener = models.TextField()
 
@@ -135,7 +151,10 @@ class Kamerstuk(models.Model):
     raw_html = models.TextField()
     raw_metadata_xml = models.TextField()
 
-    documentdatum = models.DateField(help_text="Datum van het document volgens DCTERMS.issued", default=datetime.date(1800, 1, 1))
+    documentdatum = models.DateField(
+        help_text="Datum van het document volgens DCTERMS.issued",
+        default=datetime.date(1800, 1, 1),
+    )
     toegevoegd_op = models.DateTimeField(auto_now_add=True)
     bijgewerkt_op = models.DateTimeField(auto_now=True)
 
@@ -146,7 +165,7 @@ class Kamerstuk(models.Model):
             models.Index(fields=["vergaderjaar"]),
             models.Index(fields=["kamerstuktype"]),
             models.Index(fields=["hoofddossier", "ondernummer"]),
-            models.Index(fields=["hoofddossier", "ondernummer", "kamer"])
+            models.Index(fields=["hoofddossier", "ondernummer", "kamer"]),
         ]
 
     # TODO Add support for attachments to kamerstukken

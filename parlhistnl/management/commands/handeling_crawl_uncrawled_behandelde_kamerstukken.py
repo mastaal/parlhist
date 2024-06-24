@@ -29,16 +29,26 @@ class Command(BaseCommand):
     def handle(self, *args: Any, **options: Any) -> str | None:
         """Crawl one Vergadering and all its subitems"""
 
-        handelingen = Handeling.objects.exclude(data__uncrawled__behandelde_kamerstukken=[])
+        handelingen = Handeling.objects.exclude(
+            data__uncrawled__behandelde_kamerstukken=[]
+        )
 
         for handeling in handelingen:
             logger.info("Crawling behandelde kamerstukken for %s", handeling)
 
             try:
-                kamerstukken: list[Kamerstuk] = crawl_uncrawled_behandelde_kamerstukken(handeling)
+                kamerstukken: list[Kamerstuk] = crawl_uncrawled_behandelde_kamerstukken(
+                    handeling
+                )
 
                 self.stdout.write(
-                    self.style.SUCCESS(f"Successfully created {kamerstukken}")  # pylint: disable=no-member
+                    self.style.SUCCESS(
+                        f"Successfully created {kamerstukken}"
+                    )  # pylint: disable=no-member
                 )
             except Exception as exc:
-                logger.critical("Failed to crawl behandelde kamerstukken for handeling %s (%s)", handeling, exc)
+                logger.critical(
+                    "Failed to crawl behandelde kamerstukken for handeling %s (%s)",
+                    handeling,
+                    exc,
+                )

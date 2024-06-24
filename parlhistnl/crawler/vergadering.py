@@ -22,7 +22,9 @@ logger = logging.getLogger(__name__)
 def __get_vergaderdatum(xml: ET.Element) -> datetime.date:
     """Get the vergaderdatum from a parsed metadata xml"""
 
-    vergaderdatumstr = xml.findall("metadata[@name='OVERHEIDop.datumVergadering']")[0].get("content")
+    vergaderdatumstr = xml.findall("metadata[@name='OVERHEIDop.datumVergadering']")[
+        0
+    ].get("content")
 
     return datetime.datetime.strptime(vergaderdatumstr, "%Y-%m-%d").date()
 
@@ -59,7 +61,7 @@ def crawl_vergadering(vergaderjaar: str, nummer: int, kamer="tk") -> Vergadering
         vergaderjaar=vergaderjaar,
         nummer=nummer,
         kamer=kamer,
-        vergaderdatum=vergaderdatum
+        vergaderdatum=vergaderdatum,
     )
 
     if created:

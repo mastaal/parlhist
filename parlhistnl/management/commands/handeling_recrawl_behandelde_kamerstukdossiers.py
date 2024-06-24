@@ -29,7 +29,11 @@ def job_wrapper_recrawl_behandelde_kamerstukdossiers(handeling: Handeling) -> No
     try:
         kamerstukken = recrawl_behandelde_kamerstukdossiers(handeling)
     except Exception as exc:
-        logger.error("Received exception %s while recrawling kamerstukdossiers for %s", exc, handeling)
+        logger.error(
+            "Received exception %s while recrawling kamerstukdossiers for %s",
+            exc,
+            handeling,
+        )
 
     logger.info("Successfully created %s", kamerstukken)
 
@@ -48,6 +52,8 @@ class Command(BaseCommand):
 
         for handeling in handelingen:
             if ENQUEUE_JOBS:
-                django_rq.enqueue(job_wrapper_recrawl_behandelde_kamerstukdossiers, handeling)
+                django_rq.enqueue(
+                    job_wrapper_recrawl_behandelde_kamerstukdossiers, handeling
+                )
             else:
                 job_wrapper_recrawl_behandelde_kamerstukdossiers(handeling)
