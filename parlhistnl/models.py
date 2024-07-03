@@ -134,11 +134,13 @@ class Kamerstuk(models.Model):
         VERSLAG = "Verslag"
         NOTA_NA_VERSLAG = "Nota naar aanleiding van het verslag"
         NOTA_VAN_WIJZIGING = "Nota van wijziging"
+        NOTA_VAN_VERBETERING = "Nota van verbetering"
         MEMORIE_VAN_ANTWOORD = "Memorie van antwoord"
         AMENDEMENT = "Amendement"
         MOTIE = "Motie"
         BRIEF = "Brief"
         JAARVERSLAG = "Jaarverslag"
+        LIJST_VAN_VRAGEN_EN_ANTWOORDEN = "Lijst van vragen en antwoorden"
         ONBEKEND = "Onbekend"
 
     kamerstuktype = models.CharField(

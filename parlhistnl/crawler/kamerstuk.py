@@ -124,9 +124,6 @@ def __get_kamerstuktype_from_title(
     except AttributeError:
         opgegeven_kamerstuktype = ""
 
-    if opgegeven_kamerstuktype == "Brief" or title.startswith("brief"):
-        return Kamerstuk.KamerstukType.BRIEF
-
     if opgegeven_kamerstuktype == "Amendement":
         return Kamerstuk.KamerstukType.AMENDEMENT
 
@@ -140,6 +137,9 @@ def __get_kamerstuktype_from_title(
         "koninklijke boodschap"
     ):
         return Kamerstuk.KamerstukType.KONINKLIJKE_BOODSCHAP
+
+    if title.startswith("geleidende brief"):
+        return Kamerstuk.KamerstukType.GELEIDENDE_BRIEF
 
     if opgegeven_kamerstuktype == "Memorie van toelichting":
         return Kamerstuk.KamerstukType.MEMORIE_VAN_TOELICHTING
@@ -157,13 +157,12 @@ def __get_kamerstuktype_from_title(
         title.startswith("amendement")
         or title.startswith("gewijzigd amendement")
         or title.startswith("nader gewijzigd amendement")
-    ):
-        return Kamerstuk.KamerstukType.AMENDEMENT
-
-    if (
-        title.startswith("tweede nader gewijzigd amendement")
+        or title.startswith("subamendement")
+        or title.startswith("gewijzigd subamendement")
+        or title.startswith("tweede nader gewijzigd amendement")
         or title.startswith("derde nader gewijzigd amendement")
         or title.startswith("vierde nader gewijzigd amendement")
+        or title.startswith("amdendement")
     ):
         return Kamerstuk.KamerstukType.AMENDEMENT
 
@@ -179,9 +178,11 @@ def __get_kamerstuktype_from_title(
     ):
         return Kamerstuk.KamerstukType.WETSVOORSTEL
 
-    if title.startswith(
-        "advies afdeling advisering raad van state"
-    ) or title.startswith("advies raad van state"):
+    if (
+        title.startswith("advies afdeling advisering raad van state")
+        or title.startswith("advies raad van state")
+        or title.startswith("advies en nader rapport")
+    ):
         return Kamerstuk.KamerstukType.ADVIES_RVS
 
     if (
@@ -205,10 +206,9 @@ def __get_kamerstuktype_from_title(
     ):
         return Kamerstuk.KamerstukType.NOTA_NA_VERSLAG
 
-    if title.startswith("memorie van toelichting"):
-        return Kamerstuk.KamerstukType.MEMORIE_VAN_TOELICHTING
-
-    if title.endswith("memorie van toelichting"):
+    if title.startswith("memorie van toelichting") or title.endswith(
+        "memorie van toelichting"
+    ):
         return Kamerstuk.KamerstukType.MEMORIE_VAN_TOELICHTING
 
     if title.startswith("memorie van antwoord") or title.startswith(
@@ -229,9 +229,23 @@ def __get_kamerstuktype_from_title(
     if title.lower().startswith("jaarverslag"):
         return Kamerstuk.KamerstukType.JAARVERSLAG
 
+    if title.startswith("lijst van vragen en antwoorden"):
+        return Kamerstuk.KamerstukType.LIJST_VAN_VRAGEN_EN_ANTWOORDEN
+
+    if title.startswith("nota van verbetering"):
+        return Kamerstuk.KamerstukType.NOTA_VAN_VERBETERING
+
     if "nota van wijziging" in title.lower():
         # Beware, this lax check may result in errors
         return Kamerstuk.KamerstukType.NOTA_VAN_WIJZIGING
+
+    if (
+        opgegeven_kamerstuktype == "Brief"
+        or title.startswith("brief")
+        or title.startswith("kabinetsreactie")
+        or title.startswith("reactie op")
+    ):
+        return Kamerstuk.KamerstukType.BRIEF
 
     print(f"Can't determine KamerstukType for {title}, trying to run on the tail")
 
