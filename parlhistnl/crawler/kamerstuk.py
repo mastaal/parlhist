@@ -395,6 +395,29 @@ def crawl_kamerstuk(
     return kst
 
 
+def update_kamerstuktype(kst: Kamerstuk) -> None:
+    """Re-run the kamerstuktype detection for a given Kamerstuk"""
+
+    xml_record = ET.fromstring(kst.raw_metadata_xml)
+
+    new_kamerstuktype = __get_kamerstuktype_from_title(kst.documenttitel, xml_record)
+
+    if new_kamerstuktype != kst.kamerstuktype:
+        logger.info(
+            "Found a new kamerstuktype for %s. Old: %s\tNew: %s",
+            kst,
+            kst.kamerstuktype,
+            new_kamerstuktype,
+        )
+
+        kst.kamerstuktype = new_kamerstuktype
+        kst.save()
+    else:
+        logger.debug(
+            "Kamerstuktype detection resulted in the same type, no update needed."
+        )
+
+
 def crawl_all_kamerstukken_within_koop_sru_query(
     query: str, update=False
 ) -> list[Kamerstuk]:
