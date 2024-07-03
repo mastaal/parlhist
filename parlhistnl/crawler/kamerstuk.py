@@ -292,9 +292,10 @@ def crawl_kamerstuk(
         documentdatum = __get_documentdatum(xml)
     except IndexError as exc:
         logger.error(
-            "Could not get documentdatum for %s %s, using fallback date 1800-01-01",
+            "Could not get documentdatum for %s %s, using fallback date 1800-01-01 (%s)",
             dossiernummer,
             ondernummer,
+            exc,
         )
         documentdatum = datetime.date(1800, 1, 1)
     try:
@@ -440,7 +441,12 @@ def crawl_all_kamerstukken_within_koop_sru_query(
                 preferred_url = record.find(".//gzd:preferredUrl", XML_NAMESPACES).text
                 logger.debug("Found preferred url %s", preferred_url)
             except AttributeError:
-                logger.warning("Couldn't find a preferred url for %s %s %s, falling back to default", dossiernummer_record, ondernummer_record, record)
+                logger.warning(
+                    "Couldn't find a preferred url for %s %s %s, falling back to default",
+                    dossiernummer_record,
+                    ondernummer_record,
+                    record,
+                )
                 preferred_url = None
 
             kst = crawl_kamerstuk(
@@ -455,6 +461,11 @@ def crawl_all_kamerstukken_within_koop_sru_query(
                 "Failed to crawl kst-%s-%s", dossiernummer_record, ondernummer_record
             )
         except Exception as exc:
-            logger.error("Got an unexpected exception %s in crawling kst %s %s", exc, dossiernummer_record, ondernummer_record)
+            logger.error(
+                "Got an unexpected exception %s in crawling kst %s %s",
+                exc,
+                dossiernummer_record,
+                ondernummer_record,
+            )
 
     return results
