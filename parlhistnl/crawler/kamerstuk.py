@@ -185,6 +185,11 @@ def __get_kamerstuktype_from_title(
     ):
         return Kamerstuk.KamerstukType.ADVIES_RVS
 
+    if title.startswith("nota naar aanleiding van het") or title.endswith(
+        "nota naar aanleiding van het"
+    ):
+        return Kamerstuk.KamerstukType.NOTA_NA_VERSLAG
+
     if (
         title.startswith("voorlopig verslag")
         or title.startswith("verslag")
@@ -200,11 +205,6 @@ def __get_kamerstuktype_from_title(
         or title.startswith("nader voorlopig verslag")
     ):
         return Kamerstuk.KamerstukType.VERSLAG
-
-    if title.startswith("nota naar aanleiding van het") or title.endswith(
-        "nota naar aanleiding van het"
-    ):
-        return Kamerstuk.KamerstukType.NOTA_NA_VERSLAG
 
     if title.startswith("memorie van toelichting") or title.endswith(
         "memorie van toelichting"
