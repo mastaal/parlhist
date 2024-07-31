@@ -37,7 +37,9 @@ def __get_publicatiedatum(xml: ET.Element) -> datetime.date:
 
 def __get_ondertekendatum(xml: ET.Element) -> datetime.date:
     """Get the ondertekendatum"""
-    date_str = xml.findall("metadata[@name='OVERHEIDop.datumOndertekening']")[0].get("content")
+    date_str = xml.findall("metadata[@name='OVERHEIDop.datumOndertekening']")[0].get(
+        "content"
+    )
 
     date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
 
@@ -47,15 +49,15 @@ def __get_ondertekendatum(xml: ET.Element) -> datetime.date:
 def __get_titel(xml: ET.Element) -> str:
     """Get the dossiertitel from a parsed metadata xml"""
 
-    return xml.findall("metadata[@name='DC.title']")[0].get(
-        "content"
-    )
+    return xml.findall("metadata[@name='DC.title']")[0].get("content")
 
 
 def __get_staatsblad_type(xml: ET.Element) -> Staatsblad.StaatsbladType:
     """Get the staatsbladtype"""
 
-    xmltype = xml.findall("metadata[@name='DC.type'][@scheme='OVERHEIDop.Staatsblad']")[0].get("content")
+    xmltype = xml.findall("metadata[@name='DC.type'][@scheme='OVERHEIDop.Staatsblad']")[
+        0
+    ].get("content")
 
     if xmltype == "Wet":
         return Staatsblad.StaatsbladType.WET
@@ -88,9 +90,7 @@ def crawl_staatsblad(
         meta_url = html_url.replace(".html", "/metadata.xml")
 
     try:
-        existing_stb = Staatsblad.objects.get(
-            jaargang=jaargang, nummer=nummer
-        )
+        existing_stb = Staatsblad.objects.get(jaargang=jaargang, nummer=nummer)
         logger.info("Staatsblad already exists")
         if not update:
             logger.info("Update set to false, returning existing Staatsblad")
@@ -136,17 +136,13 @@ def crawl_staatsblad(
     try:
         titel = __get_titel(xml)
     except IndexError as exc:
-        logger.critical(
-            "Could not get titel for %s %s", jaargang, nummer
-        )
+        logger.critical("Could not get titel for %s %s", jaargang, nummer)
         raise CrawlerException("Failed to get core metadata") from exc
 
     try:
         staatsblad_type = __get_staatsblad_type(xml)
     except IndexError:
-        logger.error(
-            "Could not succesfully Staatsbladtype for %s %s", jaargang, nummer
-        )
+        logger.error("Could not succesfully Staatsbladtype for %s %s", jaargang, nummer)
         staatsblad_type = Staatsblad.StaatsbladType.ONBEKEND
 
     # TODO Actually parse the behandelde_dossiers
@@ -191,7 +187,7 @@ def crawl_staatsblad(
             publicatiedatum=publicatiedatum,
             ondertekendatum=ondertekendatum,
             staatsblad_type=staatsblad_type,
-            preferred_url=preferred_url
+            preferred_url=preferred_url,
         )
 
     logger.debug(stb)
@@ -229,7 +225,12 @@ def crawl_all_staatsblad_publicaties_within_koop_sru_query(
                 preferred_url = record.find(".//gzd:preferredUrl", XML_NAMESPACES).text
                 logger.debug("Found preferred url %s", preferred_url)
             except AttributeError:
-                logger.warning("Couldn't find a preferred url for %s %s %s, falling back to default", jaargang_record, nummer_record, record)
+                logger.warning(
+                    "Couldn't find a preferred url for %s %s %s, falling back to default",
+                    jaargang_record,
+                    nummer_record,
+                    record,
+                )
                 preferred_url = None
 
             stb = crawl_staatsblad(
@@ -240,10 +241,13 @@ def crawl_all_staatsblad_publicaties_within_koop_sru_query(
             )
             results.append(stb)
         except CrawlerException:
-            logger.error(
-                "Failed to crawl stb-%s-%s", jaargang_record, nummer_record
-            )
+            logger.error("Failed to crawl stb-%s-%s", jaargang_record, nummer_record)
         except Exception as exc:
-            logger.error("Got an unexpected exception %s in crawling stb %s %s", exc, jaargang_record, nummer_record)
+            logger.error(
+                "Got an unexpected exception %s in crawling stb %s %s",
+                exc,
+                jaargang_record,
+                nummer_record,
+            )
 
     return results
