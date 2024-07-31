@@ -169,13 +169,14 @@ def crawl_staatsblad(
 
     if update and existing_stb is not None:
         existing_stb.jaargang = jaargang
-        existing_stb.staatsblad_type = staatsblad_type
         existing_stb.titel = titel
         existing_stb.publicatiedatum = publicatiedatum
         existing_stb.ondertekendatum = ondertekendatum
         existing_stb.tekst = tekst
         existing_stb.raw_html = inner_html
         existing_stb.raw_metadata_xml = meta_response.text
+        existing_stb.staatsblad_type = staatsblad_type
+        existing_stb.preferred_url = preferred_url
         existing_stb.save()
         stb = existing_stb
     else:
@@ -188,7 +189,9 @@ def crawl_staatsblad(
             raw_html=inner_html,
             raw_metadata_xml=meta_response.text,
             publicatiedatum=publicatiedatum,
-            ondertekendatum=ondertekendatum
+            ondertekendatum=ondertekendatum,
+            staatsblad_type=staatsblad_type,
+            preferred_url=preferred_url
         )
 
     logger.debug(stb)
@@ -200,7 +203,11 @@ def crawl_all_staatsblad_publicaties_within_koop_sru_query(
     query: str, update=False
 ) -> list[Staatsblad]:
     """
-    Crawl all Staatsbladken which can be found by the given KOOP SRU query
+    Crawl all Staatsbladen which can be found by the given KOOP SRU query
+
+    Example queries:
+        (w.publicatienaam=Staatsblad AND dt.type=Wet AND dt.date >= 2024-06-01)
+        (w.publicatienaam=Staatsblad AND dt.type=Wet AND dt.date >= 2024-01-01 AND dt.date <= 2024-12-31)
 
     Note: Only tested for dt.type=Wet queries.
     """
@@ -225,18 +232,18 @@ def crawl_all_staatsblad_publicaties_within_koop_sru_query(
                 logger.warning("Couldn't find a preferred url for %s %s %s, falling back to default", jaargang_record, nummer_record, record)
                 preferred_url = None
 
-            kst = crawl_staatsblad(
+            stb = crawl_staatsblad(
                 jaargang_record,
                 nummer_record,
                 update=update,
                 preferred_url=preferred_url,
             )
-            results.append(kst)
+            results.append(stb)
         except CrawlerException:
             logger.error(
-                "Failed to crawl kst-%s-%s", jaargang_record, nummer_record
+                "Failed to crawl stb-%s-%s", jaargang_record, nummer_record
             )
         except Exception as exc:
-            logger.error("Got an unexpected exception %s in crawling kst %s %s", exc, jaargang_record, nummer_record)
+            logger.error("Got an unexpected exception %s in crawling stb %s %s", exc, jaargang_record, nummer_record)
 
     return results

@@ -211,6 +211,8 @@ class Staatsblad(models.Model):
         max_length=256, choices=StaatsbladType.choices, default=StaatsbladType.ONBEKEND
     )
 
+    preferred_url = models.URLField(null=True)
+
     class Meta:
         """Meta information for django"""
 
