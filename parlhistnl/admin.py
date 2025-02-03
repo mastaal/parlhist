@@ -1,7 +1,7 @@
 """
     parlhist/parlhistnl/admin.py
 
-    Copyright 2023, Martijn Staal <parlhist [at] martijn-staal.nl>
+    Copyright 2023, 2025 Martijn Staal <parlhist [at] martijn-staal.nl>
 
     Available under the EUPL-1.2, or, at your option, any later version.
 
@@ -10,9 +10,10 @@
 
 from django.contrib import admin
 
-from .models import Vergadering, Handeling, Kamerstuk, KamerstukDossier
+from .models import Vergadering, Handeling, Kamerstuk, KamerstukDossier, Staatsblad
 
 admin.site.register(Vergadering)
 admin.site.register(Handeling)
 admin.site.register(Kamerstuk)
 admin.site.register(KamerstukDossier)
+admin.site.register(Staatsblad)
