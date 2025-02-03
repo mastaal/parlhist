@@ -199,6 +199,7 @@ class Staatsblad(models.Model):
     titel = models.TextField()
     tekst = models.TextField()
     raw_html = models.TextField()
+    raw_xml = models.TextField()
     raw_metadata_xml = models.TextField()
 
     publicatiedatum = models.DateField()
@@ -214,6 +215,7 @@ class Staatsblad(models.Model):
         AMVB = "AMvB"
         VERBETERBLAD = "Verbeterblad"
         ONBEKEND = "Onbekend"
+        KKB = "Klein Koninklijk Besluit"
 
     staatsblad_type = models.CharField(
         max_length=256, choices=StaatsbladType.choices, default=StaatsbladType.ONBEKEND

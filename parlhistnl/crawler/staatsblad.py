@@ -1,7 +1,7 @@
 """
     parlhist/parlhistnl/crawler/staatsblad.py
 
-    Copyright 2024, Martijn Staal <parlhist [at] martijn-staal.nl>
+    Copyright 2024, 2025 Martijn Staal <parlhist [at] martijn-staal.nl>
 
     Available under the EUPL-1.2, or, at your option, any later version.
 
@@ -68,6 +68,10 @@ def __get_staatsblad_type(xml: ET.Element) -> Staatsblad.StaatsbladType:
     if xmltype == "Verbeterblad":
         return Staatsblad.StaatsbladType.VERBETERBLAD
 
+    # TODO: Further disambiguate between possible KKB's so that direct filtering on inwerkingtreding-KB's is possible
+    if xmltype == "Klein Koninklijk Besluit":
+        return Staatsblad.StaatsbladType.KKB
+
     return Staatsblad.StaatsbladType.ONBEKEND
 
 
@@ -87,6 +91,7 @@ def crawl_staatsblad(
         meta_url = f"{base_url}/metadata.xml"
     else:
         html_url: str = preferred_url
+        xml_url = html_url.replace(".html", ".xml")
         meta_url = html_url.replace(".html", "/metadata.xml")
 
     try:
@@ -102,50 +107,58 @@ def crawl_staatsblad(
     try:
         text_response = get_url_or_error(html_url)
     except CrawlerException as exc:
-        logger.critical("This Staatsblad seems to not exist")
-        raise CrawlerException("This Staatsblad seems to not exist") from exc
+        logger.critical("Could not retrieve HTML version for this Staatsblad, tried %s", html_url)
+        raise CrawlerException("Could not retrieve HTML version for this Staatsblad") from exc
 
     try:
         meta_response = get_url_or_error(meta_url)
     except CrawlerException as exc:
-        logger.fatal("This handeling seems to not exist")
-        raise CrawlerException("This handeling seems to not exist") from exc
-
-    xml = ET.fromstring(meta_response.text)
+        logger.fatal("Could not retrieve XML metadata for this Staatsblad, tried %s", meta_url)
+        raise CrawlerException("Could not retrieve XML metadata for this Staatsblad") from exc
 
     try:
-        publicatiedatum = __get_publicatiedatum(xml)
+        xml_response = get_url_or_error(xml_url)
+    except CrawlerException as exc:
+        logger.fatal("Could not retrieve XML metadata for this Staatsblad, tried %s", xml_url)
+        raise CrawlerException("Could not retrieve XML metadata for this Staatsblad") from exc
+
+    metadata_xml = ET.fromstring(meta_response.text)
+
+    try:
+        publicatiedatum = __get_publicatiedatum(metadata_xml)
     except IndexError:
         logger.error(
-            "Could not get publicatiedatum for %s %s, using fallback date 1800-01-01",
+            "Could not get publicatiedatum for %s %s (%s), using fallback date 1800-01-01",
             jaargang,
             nummer,
+            meta_url
         )
         publicatiedatum = datetime.date(1800, 1, 1)
 
     try:
-        ondertekendatum = __get_ondertekendatum(xml)
+        ondertekendatum = __get_ondertekendatum(metadata_xml)
     except IndexError:
         logger.error(
-            "Could not get publicatiedatum for %s %s, using fallback date 1800-01-01",
+            "Could not get ondertekendatum for %s %s (%s), using fallback date 1800-01-01",
             jaargang,
             nummer,
+            meta_url
         )
         ondertekendatum = datetime.date(1800, 1, 1)
 
     try:
-        titel = __get_titel(xml)
+        titel = __get_titel(metadata_xml)
     except IndexError as exc:
-        logger.critical("Could not get titel for %s %s", jaargang, nummer)
+        logger.critical("Could not get titel for %s %s (%s)", jaargang, nummer, meta_url)
         raise CrawlerException("Failed to get core metadata") from exc
 
     try:
-        staatsblad_type = __get_staatsblad_type(xml)
+        staatsblad_type = __get_staatsblad_type(metadata_xml)
     except IndexError:
         logger.error("Could not succesfully Staatsbladtype for %s %s", jaargang, nummer)
         staatsblad_type = Staatsblad.StaatsbladType.ONBEKEND
 
-    # TODO Actually parse the behandelde_dossiers
+    # Actually parse the behandelde_dossiers (OVERHEIDop.behandeldDossier)
 
     # TODO: Make specific function for extracting this inner html
     soup = BeautifulSoup(text_response.text, "html.parser")
@@ -153,10 +166,9 @@ def crawl_staatsblad(
     elems = soup.select("article div#broodtekst.stuk.broodtekst-container")
 
     if len(elems) > 1:
-        logger.info(
-            "Got multiple matches where only one was expected %s %s",
-            jaargang,
-            nummer,
+        logger.warning(
+            "While extracting the inner html text, multiple matches were found where only one was expected %s",
+            html_url
         )
 
     inner_html = str(elems[0])
@@ -170,6 +182,7 @@ def crawl_staatsblad(
         existing_stb.ondertekendatum = ondertekendatum
         existing_stb.tekst = tekst
         existing_stb.raw_html = inner_html
+        existing_stb.raw_xml = xml_response.text
         existing_stb.raw_metadata_xml = meta_response.text
         existing_stb.staatsblad_type = staatsblad_type
         existing_stb.preferred_url = preferred_url
@@ -183,6 +196,7 @@ def crawl_staatsblad(
             titel=titel,
             tekst=tekst,
             raw_html=inner_html,
+            raw_xml=xml_response.text,
             raw_metadata_xml=meta_response.text,
             publicatiedatum=publicatiedatum,
             ondertekendatum=ondertekendatum,
