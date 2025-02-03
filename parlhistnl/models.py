@@ -201,6 +201,7 @@ class Staatsblad(models.Model):
     raw_html = models.TextField()
     raw_xml = models.TextField()
     raw_metadata_xml = models.TextField()
+    metadata_json = models.JSONField()
 
     publicatiedatum = models.DateField()
     ondertekendatum = models.DateField()

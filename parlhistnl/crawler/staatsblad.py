@@ -160,6 +160,11 @@ def crawl_staatsblad(
 
     # Actually parse the behandelde_dossiers (OVERHEIDop.behandeldDossier)
 
+    # Also store the metadata in JSON
+    metadata_json = {}
+    for metadata in metadata_xml.findall("metadata"):
+        metadata_json[metadata.get("name")] = metadata.get("content")
+
     # TODO: Make specific function for extracting this inner html
     soup = BeautifulSoup(text_response.text, "html.parser")
 
@@ -184,6 +189,7 @@ def crawl_staatsblad(
         existing_stb.raw_html = inner_html
         existing_stb.raw_xml = xml_response.text
         existing_stb.raw_metadata_xml = meta_response.text
+        existing_stb.metadata_json = metadata_json
         existing_stb.staatsblad_type = staatsblad_type
         existing_stb.preferred_url = preferred_url
         existing_stb.save()
@@ -198,6 +204,7 @@ def crawl_staatsblad(
             raw_html=inner_html,
             raw_xml=xml_response.text,
             raw_metadata_xml=meta_response.text,
+            metadata_json=metadata_json,
             publicatiedatum=publicatiedatum,
             ondertekendatum=ondertekendatum,
             staatsblad_type=staatsblad_type,
