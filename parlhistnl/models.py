@@ -1,7 +1,7 @@
 """
     parlhist/parlhistnl/models.py
 
-    Copyright 2023, 2024 Martijn Staal <parlhist [at] martijn-staal.nl>
+    Copyright 2023, 2024, 2025 Martijn Staal <parlhist [at] martijn-staal.nl>
 
     Available under the EUPL-1.2, or, at your option, any later version.
 
@@ -40,6 +40,8 @@ class Vergadering(models.Model):
             models.Index(fields=["vergaderjaar", "nummer", "kamer", "vergaderdatum"]),
         ]
 
+        verbose_name_plural = "Vergaderingen"
+
     def __str__(self):
         return f"Vergadering h-{self.kamer}-{self.vergaderjaar}-{self.nummer}"
 
@@ -74,6 +76,8 @@ class Handeling(models.Model):
             models.Index(fields=["vergadering", "ondernummer"]),
         ]
 
+        verbose_name_plural = "Handelingen"
+
     def __str__(self) -> str:
         return f"h-{self.vergadering.kamer}-{self.vergadering.vergaderjaar}-{self.vergadering.nummer}-{self.ondernummer}"  # pylint: disable=no-member
 
@@ -97,6 +101,8 @@ class KamerstukDossier(models.Model):
         indexes = [
             models.Index(fields=["dossiernummer"]),
         ]
+
+        verbose_name_plural = "KamerstukDossiers"
 
     def __str__(self) -> str:
         return f"{self.dossiernummer}: {self.dossiertitel}"
@@ -170,6 +176,8 @@ class Kamerstuk(models.Model):
             models.Index(fields=["hoofddossier", "ondernummer", "kamer"]),
         ]
 
+        verbose_name_plural = "Kamerstukken"
+
     # TODO Add support for attachments to kamerstukken
 
     def __str__(self) -> str:
@@ -219,6 +227,8 @@ class Staatsblad(models.Model):
         indexes = [
             models.Index(fields=["jaargang", "nummer"]),
         ]
+
+        verbose_name_plural = "Staatsbladen"
 
     def __str__(self) -> str:
         return f"Staatsblad {self.jaargang}-{self.nummer} {self.staatsblad_type}: {self.titel} ({self.publicatiedatum})"
