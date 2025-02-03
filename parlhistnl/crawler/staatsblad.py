@@ -163,7 +163,7 @@ def crawl_staatsblad(
     # Also store the metadata in JSON
     metadata_json = {}
     for metadata in metadata_xml.findall("metadata"):
-        metadata_json[metadata.get("name")] = metadata.get("content")
+        metadata_json[metadata.get("name").replace(".", "").lower()] = metadata.get("content")
 
     # TODO: Make specific function for extracting this inner html
     soup = BeautifulSoup(text_response.text, "html.parser")
@@ -241,6 +241,7 @@ def crawl_all_staatsblad_publicaties_within_koop_sru_query(
             nummer_record = record.find(
                 ".//overheidwetgeving:publicatienummer", XML_NAMESPACES
             ).text
+            logger.debug("Found jaargang %s, nummer %s", jaargang_record, nummer_record)
 
             try:
                 preferred_url = record.find(".//gzd:preferredUrl", XML_NAMESPACES).text
