@@ -62,8 +62,14 @@ def __get_staatsblad_type(xml: ET.Element) -> Staatsblad.StaatsbladType:
     if xmltype == "Wet":
         return Staatsblad.StaatsbladType.WET
 
+    if xmltype == "Rijkswet":
+        return Staatsblad.StaatsbladType.RIJKSWET
+
     if xmltype == "AMvB":
         return Staatsblad.StaatsbladType.AMVB
+
+    if xmltype == "RijksAMvB":
+        return Staatsblad.StaatsbladType.RIJKSAMVB
 
     if xmltype == "Verbeterblad":
         return Staatsblad.StaatsbladType.VERBETERBLAD

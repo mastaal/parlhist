@@ -213,7 +213,9 @@ class Staatsblad(models.Model):
         """Specialized enum for Staatsblad types"""
 
         WET = "Wet"
+        RIJKSWET = "Rijkswet"
         AMVB = "AMvB"
+        RIJKSAMVB = "RijksAMvB"
         VERBETERBLAD = "Verbeterblad"
         ONBEKEND = "Onbekend"
         KKB = "Klein Koninklijk Besluit"
