@@ -52,7 +52,7 @@ def __get_titel(xml: ET.Element) -> str:
     return xml.findall("metadata[@name='DC.title']")[0].get("content")
 
 
-def __get_staatsblad_type(xml: ET.Element) -> Staatsblad.StaatsbladType:
+def __get_staatsblad_type(xml: ET.Element, titel: str) -> Staatsblad.StaatsbladType:
     """Get the staatsbladtype"""
 
     xmltype = xml.findall("metadata[@name='DC.type'][@scheme='OVERHEIDop.Staatsblad']")[
@@ -77,6 +77,9 @@ def __get_staatsblad_type(xml: ET.Element) -> Staatsblad.StaatsbladType:
     # TODO: Further disambiguate between possible KKB's so that direct filtering on inwerkingtreding-KB's is possible
     if xmltype == "Klein Koninklijk Besluit":
         return Staatsblad.StaatsbladType.KKB
+
+    if xmltype == "Beschikking" and "plaatsing in het Staatsblad van de tekst" in titel:
+        return Staatsblad.StaatsbladType.INTEGRALE_TEKSTPLAATSING
 
     return Staatsblad.StaatsbladType.ONBEKEND
 
@@ -160,7 +163,7 @@ def crawl_staatsblad(
         raise CrawlerException("Failed to get core metadata") from exc
 
     try:
-        staatsblad_type = __get_staatsblad_type(metadata_xml)
+        staatsblad_type = __get_staatsblad_type(metadata_xml, titel)
     except IndexError:
         logger.error("Could not succesfully Staatsbladtype for %s %s", jaargang, nummer)
         staatsblad_type = Staatsblad.StaatsbladType.ONBEKEND

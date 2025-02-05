@@ -219,6 +219,7 @@ class Staatsblad(models.Model):
         VERBETERBLAD = "Verbeterblad"
         ONBEKEND = "Onbekend"
         KKB = "Klein Koninklijk Besluit"
+        INTEGRALE_TEKSTPLAATSING = "Integrale tekstplaatsing"
 
     staatsblad_type = models.CharField(
         max_length=256, choices=StaatsbladType.choices, default=StaatsbladType.ONBEKEND
