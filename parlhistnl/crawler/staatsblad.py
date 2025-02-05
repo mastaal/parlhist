@@ -97,8 +97,9 @@ def crawl_staatsblad(
         meta_url = f"{base_url}/metadata.xml"
     else:
         html_url: str = preferred_url
-        xml_url = html_url.replace(".html", ".xml")
         meta_url = html_url.replace(".html", "/metadata.xml")
+
+    xml_url = html_url.replace(".html", ".xml")
 
     try:
         existing_stb = Staatsblad.objects.get(jaargang=jaargang, nummer=nummer)
