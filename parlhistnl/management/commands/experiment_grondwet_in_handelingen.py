@@ -1,8 +1,8 @@
 """
-    parlhist/parlhistnl/management/commands/experiment_1_grondwet.py
+    parlhist/parlhistnl/management/commands/experiment_grondwet_in_handelingen.py
 
-    Experiment 1:
-    Simple pattern search experiment
+    Experiment Grondwet in Handelingen
+    Simple regex-based recognition of mentions of the constitution in parliamentary proceedings.
 
     Copyright 2023, 2024 Martijn Staal <parlhist [at] martijn-staal.nl>
 
