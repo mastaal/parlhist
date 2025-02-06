@@ -1,9 +1,9 @@
 """
-    parlhist/parlhistnl/management/commands/crawl_all_kamerstukken_year.py
+    parlhist/parlhistnl/management/commands/kamerstukken_crawl_year.py.py
 
     Crawl all Kamerstukken in a calendar year (e.g., 2020-01-01 through 2020-12-31).
 
-    Copyright 2024, Martijn Staal <parlhist [at] martijn-staal.nl>
+    Copyright 2024, 2025 Martijn Staal <parlhist [at] martijn-staal.nl>
 
     Available under the EUPL-1.2, or, at your option, any later version.
 
@@ -32,37 +32,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "year",
             type=int,
-            choices=[
-                1995,
-                1996,
-                1997,
-                1998,
-                1999,
-                2000,
-                2001,
-                2002,
-                2003,
-                2004,
-                2005,
-                2006,
-                2007,
-                2008,
-                2009,
-                2010,
-                2011,
-                2012,
-                2013,
-                2014,
-                2015,
-                2016,
-                2017,
-                2018,
-                2019,
-                2020,
-                2021,
-                2022,
-                2023,
-            ],
+            choices=list(range(1995, 2026)),
             default=2020,
             help="Which calendar year to crawl the kamerstukken of",
         )
@@ -79,7 +49,7 @@ class Command(BaseCommand):
 
         koop_sru_query = f"(c.product-area==officielepublicaties AND dt.type=Kamerstuk AND dt.date >={year}-01-01 AND dt.date <= {year}-12-31)"
 
-        kamerstukken = crawl_all_kamerstukken_within_koop_sru_query(
+        kamerstukken: list[Kamerstuk] = crawl_all_kamerstukken_within_koop_sru_query(
             koop_sru_query, update=options["update"]
         )
 
