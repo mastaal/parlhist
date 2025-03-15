@@ -1,5 +1,5 @@
 """
-    parlhist/parlhistnl/utils.py
+    parlhist/parlhistnl/utils/inwerkingtredingsbepalingen.py
 
     Assorted utilities for experiments
 
@@ -17,10 +17,12 @@ from parlhistnl.models import Staatsblad
 logger = logging.getLogger(__name__)
 
 
-def find_related_inwerkingtredingskb(stb: Staatsblad) -> list[Staatsblad]:
+def find_related_inwerkingtredingskb(stb: Staatsblad) -> set[Staatsblad]:
     """
     Given the Staatsblad object for some wet or amvb, try to retrieve all related inwerkingtredingskbs.
     """
+
+    resultset = set()
 
     if (
         stb.staatsblad_type != Staatsblad.StaatsbladType.WET
@@ -31,7 +33,7 @@ def find_related_inwerkingtredingskb(stb: Staatsblad) -> list[Staatsblad]:
         logger.error(
             "Tried to find related inwerkingtredingskb for a stb that is not of type WET, AMVB, RIJKSWET or RIJKSAMVB"
         )
-        return []
+        return resultset
 
     # Just search for any KKB that contains the reference to our stb in the metadata XML
     kkbs_metadata_xml_stb_ref = Staatsblad.objects.filter(
@@ -40,6 +42,8 @@ def find_related_inwerkingtredingskb(stb: Staatsblad) -> list[Staatsblad]:
     )
 
     logger.info(kkbs_metadata_xml_stb_ref)
+
+    resultset.update(kkbs_metadata_xml_stb_ref)
 
     # See if there is possibly a citeertitel in the metadata
     if "dctermsalternative" in stb.metadata_json:
@@ -57,4 +61,6 @@ def find_related_inwerkingtredingskb(stb: Staatsblad) -> list[Staatsblad]:
 
         logger.info(kkbs_metadata_xml_citeertitel)
 
-    return []
+        resultset.update(kkbs_metadata_xml_citeertitel)
+
+    return resultset
