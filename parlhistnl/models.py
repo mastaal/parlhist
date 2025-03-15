@@ -238,3 +238,85 @@ class Staatsblad(models.Model):
 
     def __str__(self) -> str:
         return f"Staatsblad {self.jaargang}-{self.nummer} {self.staatsblad_type}: {self.titel} ({self.publicatiedatum})"
+
+    def __title_based_staatsblad_property_check_all(
+        self, check_strings: list[str]
+    ) -> bool:
+        """
+        Base method to create title-based identification methods. The title must mention
+        all of the given check strings.
+
+        The titel is normalized first.
+        """
+
+        normalized_title = self.titel.lower()
+
+        return all([x in normalized_title for x in check_strings])
+
+    def __title_based_staatsblad_property_check_any(
+        self, check_strings: list[str]
+    ) -> bool:
+        """
+        Base method to create title-based identification methods. The title must mention
+        any of the given check strings.
+
+        The titel is normalized first.
+        """
+
+        normalized_title = self.titel.lower()
+
+        return any([x in normalized_title for x in check_strings])
+
+    @property
+    def is_wet(self) -> bool:
+        """Is this a StaatsbladType.WET or StaatsbladType.RIJKSWET?"""
+
+        if (
+            self.staatsblad_type == Staatsblad.StaatsbladType.WET
+            or self.staatsblad_type == Staatsblad.StaatsbladType.RIJKSWET
+        ):
+            return True
+
+        return False
+
+    @property
+    def is_goedkeuringswet_verdrag(self) -> bool:
+        """Returns true if this Staatsblad probably contains a goedkeuringswet for a verdrag"""
+
+        check_strings = ["trb", "goedkeuring"]
+
+        return self.is_wet() and self.__title_based_staatsblad_property_check_all(
+            check_strings
+        )
+
+    @property
+    def is_begrotingswet(self) -> bool:
+        """Returns true if this Staatsblad probably contains a begrotingswet"""
+
+        check_strings = ["begrotingsstaat", "begrotingsstaten"]
+
+        return self.is_wet() and self.__title_based_staatsblad_property_check_any(
+            check_strings
+        )
+
+    @property
+    def is_slotwet(self) -> bool:
+        """Returns true if this Staatsblad probably contains a slotwet"""
+
+        check_strings = ["slotwet"]
+
+        return self.is_wet() and self.__title_based_staatsblad_property_check_all(
+            check_strings
+        )
+
+    @property
+    def is_vaststelling_grond_grondwetswijziging(self) -> bool:
+        """Returns true if this Staatsblad probably contains a wet houdende verklaring dat er grond bestaat een voorstel in overweging te nemen tot verandering in de Grondwet"""
+
+        check_strings = [
+            "houdende verklaring dat er grond bestaat een voorstel in overweging te nemen tot verandering in de grondwet"
+        ]
+
+        return self.is_wet() and self.__title_based_staatsblad_property_check_all(
+            check_strings
+        )
