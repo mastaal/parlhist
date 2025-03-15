@@ -31,7 +31,7 @@ kb_re: re.Pattern = re.compile(
     r"bij\s+koninklijk\s+besluit\s+te\s+bepalen\s+tijdstip", re.IGNORECASE
 )
 dif_re: re.Pattern = re.compile(
-    r"verschillend\s+kan\s+worden\s+vastgesteld", re.IGNORECASE
+    r"verschillend\s+kan\s+worden\s+(vast)?gesteld", re.IGNORECASE
 )
 
 
@@ -129,4 +129,8 @@ class Command(BaseCommand):
             json.dump(data, jsonfile)
 
         print("Dumped wetten:", len(data))
+        print(f"inwerkingtreding met delegatie, met differentiatie: {iwtr_d_d}")
+        print(f"inwerkingtreding met delegatie, zonder differentiatie: {iwtr_d_zd}")
+        print(f"inwerkingtreding zonder delegatie: {iwtr_zd_zd}")
+        print(f"inwerkingtreding type onbekend: {iwtr_onbekend}")
         print(iwtr_d_d, iwtr_d_zd, iwtr_zd_zd, iwtr_onbekend)
