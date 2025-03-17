@@ -285,7 +285,7 @@ class Staatsblad(models.Model):
 
         check_strings = ["trb", "goedkeuring"]
 
-        return self.is_wet() and self.__title_based_staatsblad_property_check_all(
+        return self.is_wet and self.__title_based_staatsblad_property_check_all(
             check_strings
         )
 
@@ -295,7 +295,7 @@ class Staatsblad(models.Model):
 
         check_strings = ["begrotingsstaat", "begrotingsstaten"]
 
-        return self.is_wet() and self.__title_based_staatsblad_property_check_any(
+        return self.is_wet and self.__title_based_staatsblad_property_check_any(
             check_strings
         )
 
@@ -305,7 +305,7 @@ class Staatsblad(models.Model):
 
         check_strings = ["slotwet"]
 
-        return self.is_wet() and self.__title_based_staatsblad_property_check_all(
+        return self.is_wet and self.__title_based_staatsblad_property_check_all(
             check_strings
         )
 
@@ -317,6 +317,6 @@ class Staatsblad(models.Model):
             "houdende verklaring dat er grond bestaat een voorstel in overweging te nemen tot verandering in de grondwet"
         ]
 
-        return self.is_wet() and self.__title_based_staatsblad_property_check_all(
+        return self.is_wet and self.__title_based_staatsblad_property_check_all(
             check_strings
         )

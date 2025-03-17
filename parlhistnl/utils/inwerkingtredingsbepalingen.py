@@ -55,7 +55,7 @@ def find_inwerkingtredingsbepaling(stb: Staatsblad) -> dict:
         start, end, text: if an inwerkingtredingsbepaling was found in the text, the start, end and actual text value of it.
     """
 
-    if stb.is_vaststelling_grond_grondwetswijziging():
+    if stb.is_vaststelling_grond_grondwetswijziging:
         label = InwerkingtredingsbepalingType.GEEN_INWERKINGTREDINGSBEPALING
 
     cleaned_text_1 = stb.tekst.replace("\xa0", " ")

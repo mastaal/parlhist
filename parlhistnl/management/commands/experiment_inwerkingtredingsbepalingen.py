@@ -72,11 +72,11 @@ class Command(BaseCommand):
         for wet in wetten:
 
             # Handle special cases which never contain a inwerkingtredingsbepaling
-            if wet.is_vaststelling_grond_grondwetswijziging():
+            if wet.is_vaststelling_grond_grondwetswijziging:
                 vaststellingswet_grondwetswijziging += 1
                 continue
 
-            if wet.is_goedkeuringswet_verdrag():
+            if wet.is_goedkeuringswet_verdrag:
                 goedkeuringswet_verdrag += 1
 
             check_result = find_inwerkingtredingsbepaling(wet)
