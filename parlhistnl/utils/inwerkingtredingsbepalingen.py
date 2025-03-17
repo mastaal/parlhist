@@ -19,7 +19,7 @@ from parlhistnl.models import Staatsblad
 
 logger = logging.getLogger(__name__)
 iwt_re: re.Pattern = re.compile(
-    r"(de\s+artikelen\s+van\s+deze\s+(rijks)?wet\s+treden|deze\s+(rijks)?wet\s+treedt)(,\s+met\s+uitzondering\s+van[\w,\s]+,\s*)?(,\s+onder\s+toepassing\s+van\s+artikel\s+12,\s+eerste lid,\s+van\s+de\s+Wet\s+raadgevend\s+referendum,)?\s+in\s+werking[\w,\s]+.(\s*indien[\w,\s]+.)?",
+    r"(de\s+artikelen\s+van\s+deze\s+(rijks)?wet\s+treden|deze\s+(rijks)?wet\s+treedt)(,?\s*met\s+uitzondering\s+van[\w,\s]+,\s*)?(,\s+onder\s+toepassing\s+van\s+artikel\s+12,\s+eerste lid,\s+van\s+de\s+Wet\s+raadgevend\s+referendum,)?\s+in\s+werking[\w,\s]+.(\s*indien[\w,\s]+.)?",
     re.IGNORECASE,
 )
 
