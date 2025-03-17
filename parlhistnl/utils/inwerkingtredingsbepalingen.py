@@ -29,6 +29,13 @@ kb_re: re.Pattern = re.compile(
 dif_re: re.Pattern = re.compile(
     r"verschillend\s+kan\s+worden\s+(vast)?gesteld", re.IGNORECASE
 )
+date_in_title_re: re.Pattern = re.compile(
+    r"van\s+\d?\d\s+(januari|februari|maart|april|mei|juni|juli|augustus|september|oktober|november|december)\s+\d{4}\s+", re.IGNORECASE
+)
+
+# All the Staatsblad.StaatsbladTypes which are a koninklijk besluit and which may contain any delegated
+# decisions on the inwerkingtredingsdatum of a wet.
+STAATSBLADTYPES_KB = [Staatsblad.StaatsbladType.KKB, Staatsblad.StaatsbladType.AMVB, Staatsblad.StaatsbladType.RIJKSAMVB]
 
 
 class InwerkingtredingsbepalingType(Enum):
@@ -114,12 +121,15 @@ def find_related_inwerkingtredingskb(stb: Staatsblad) -> set[Staatsblad]:
         return resultset
 
     # Just search for any KKB that contains the reference to our stb in the metadata XML
+    # Note thate an AMVB or RIJKSAMVB can also contain the inwerkingtredingsbepaling; see for example
+    # article II(2) of Stb. 2014, 405 https://zoek.officielebekendmakingen.nl/stb-2014-405.html
     kkbs_metadata_xml_stb_ref = Staatsblad.objects.filter(
-        staatsblad_type=Staatsblad.StaatsbladType.KKB,
+        staatsblad_type__in=STAATSBLADTYPES_KB,
         raw_metadata_xml__icontains=f"Stb. {stb.jaargang}, {stb.nummer}",
+        publicatiedatum__gte=stb.publicatiedatum  # Assume that the inwerkingtredingskb is never younger than the stb
     )
 
-    logger.info(kkbs_metadata_xml_stb_ref)
+    # logger.info(kkbs_metadata_xml_stb_ref)
 
     resultset.update(kkbs_metadata_xml_stb_ref)
 
@@ -127,18 +137,38 @@ def find_related_inwerkingtredingskb(stb: Staatsblad) -> set[Staatsblad]:
     if "dctermsalternative" in stb.metadata_json:
         citeertitel = stb.metadata_json["dctermsalternative"]
         logger.info("Found citeertitel %s", citeertitel)
-    else:
-        citeertitel = None
 
-    if citeertitel is not None:
         # Since we have found a citeertitel, we can also search for that
         kkbs_metadata_xml_citeertitel = Staatsblad.objects.filter(
-            staatsblad_type=Staatsblad.StaatsbladType.KKB,
+            staatsblad_type__in=STAATSBLADTYPES_KB,
             raw_metadata_xml__icontains=citeertitel,
+            publicatiedatum__gte=stb.publicatiedatum
         )
 
-        logger.info(kkbs_metadata_xml_citeertitel)
+        # logger.info(kkbs_metadata_xml_citeertitel)
 
         resultset.update(kkbs_metadata_xml_citeertitel)
+    else:
+        # Since there is no citeertitel, lets try to find a KKB that mentions the full title of our stb.
+        kkbs_metadata_xml_full_title = Staatsblad.objects.filter(
+            staatsblad_type__in=STAATSBLADTYPES_KB,
+            raw_metadata_xml__icontains=stb.titel,
+            publicatiedatum__gte=stb.publicatiedatum
+        )
+
+        resultset.update(kkbs_metadata_xml_full_title)
+
+        # Alternatively, we try to remove the date from the title and search for that
+        stb_title_without_date = date_in_title_re.sub("", stb.titel)
+        logger.debug("Cleaned title %s to %s", stb.titel, stb_title_without_date)
+        kkbs_metadata_xml_full_title_no_date = Staatsblad.objects.filter(
+            staatsblad_type__in=STAATSBLADTYPES_KB,
+            raw_metadata_xml__icontains=stb_title_without_date,
+            publicatiedatum__gte=stb.publicatiedatum
+        )
+
+        resultset.update(kkbs_metadata_xml_full_title_no_date)
+
+    # TODO: Search within the text itself if we haven't found anything
 
     return resultset
