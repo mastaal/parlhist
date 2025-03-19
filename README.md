@@ -87,8 +87,13 @@ json, etc.), and do the data analysis in some other tool (a Jupyter Notebook for
 
 None yet. Stay tuned!
 
-## License
+## Copyright and license
 
-Copyright (c) 2023, 2024 Martijn Staal/Universiteit Leiden <m.a.staal [at] law.leidenuniv.nl> / <parlhist [at] martijn-staal.nl>
+Parlhist was for the most part written for personal study purposes:
+Copyright (c) 2023-2025 Martijn Staal <parlhist [at] martijn-staal.nl>
 
+Some parts were written as part of my employment at Universiteit Leiden:
+Copyright (c) 2024-2025 Universiteit Leiden <m.a.staal [at] law.leidenuniv.nl>
+
+Regardless, the complete source code is available under the same license:
 Available under the European Union Public License v1.2 (EUPL-1.2), or, at your option, any later version.
