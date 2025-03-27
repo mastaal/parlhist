@@ -49,18 +49,18 @@ Then, make the appropriate changes to the `DATABASES` variable in `parlhist/sett
 ### Preparing the database
 Then, we can initialize the database:
 ```
-$ ./manage migrate
+$ ./manage.py migrate
 ```
 
 Then, we can populate the database as follows. Currently it is only possible to crawl one full year of parliamentary history at once:
 ```
-$ ./manage vergaderdag_crawl_full_vergaderjaar --kamer tk 20212022
+$ ./manage.py vergaderdag_crawl_full_vergaderjaar --kamer tk 20212022
 ```
 
 Once you have crawled all the parliamentary years you're interested in, you can download the related parliamentary documents using the following commands:
 ```
-$ ./manage handeling_crawl_uncrawled_behandelde_kamerstukdossiers
-$ ./manage handeling_crawl_uncrawled_behandelde_kamerstukken
+$ ./manage.py handeling_crawl_uncrawled_behandelde_kamerstukdossiers
+$ ./manage.py handeling_crawl_uncrawled_behandelde_kamerstukken
 ```
 Depending on how many years of data you have crawled, this may take several hours.
 
@@ -80,7 +80,7 @@ When no memoized request exists, the crawler will wait some time to prevent over
 Now that `parlhist` is installed and the database populated with data, you can run your experiments.
 Two main approaches exist to do this. First, you can add a new Django command which runs your experiment
 (such as `parlhistnl/management/commands/experiment_1_grondwet.py` we've used). Secondly, you can enter a
-Django shell using `$ ./manage shell` and export the data you are looking for to some other format (pandas,
+Django shell using `$ ./manage.py shell` and export the data you are looking for to some other format (pandas,
 json, etc.), and do the data analysis in some other tool (a Jupyter Notebook for example).
 
 ## Publications
@@ -90,10 +90,13 @@ None yet. Stay tuned!
 ## Copyright and license
 
 Parlhist was for the most part written for personal study purposes:
+
 Copyright (c) 2023-2025 Martijn Staal <parlhist [at] martijn-staal.nl>
 
 Some parts were written as part of my employment at Universiteit Leiden:
+
 Copyright (c) 2024-2025 Universiteit Leiden <m.a.staal [at] law.leidenuniv.nl>
 
 Regardless, the complete source code is available under the same license:
+
 Available under the European Union Public License v1.2 (EUPL-1.2), or, at your option, any later version.
