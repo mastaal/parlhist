@@ -83,7 +83,7 @@ class Command(BaseCommand):
                                 "end": labeled_match["end"],
                                 "score": 0.25,
                                 "text": labeled_match["text"],
-                                "labels": labeled_match["label"].value,
+                                "labels": [labeled_match["label"].value],
                             },
                 }
 
