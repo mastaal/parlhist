@@ -320,3 +320,7 @@ class Staatsblad(models.Model):
         return self.is_wet and self.__title_based_staatsblad_property_check_all(
             check_strings
         )
+
+    @property
+    def stbid(self) -> str:
+        return f"stb-{self.jaargang}-{self.nummer}"
