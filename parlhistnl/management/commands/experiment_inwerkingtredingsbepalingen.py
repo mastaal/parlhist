@@ -43,7 +43,6 @@ class Command(BaseCommand):
             ],
             jaargang__gte=1995,
         )
-        # wetten = Staatsblad.objects.filter(staatsblad_type=Staatsblad.StaatsbladType.WET, jaargang__gte=1995)
 
         logger.info("Found %s wetten", wetten.count())
 
@@ -69,6 +68,29 @@ class Command(BaseCommand):
 
             check_result = find_inwerkingtredingsbepaling(wet)
 
+            labeled_matches = check_result["labeled_matches"]
+
+            resultlist = []
+            id_count = 0
+            for labeled_match in labeled_matches:
+                result = {
+                            "id": f"{wet.stbid}-{id_count}",
+                            "from_name": "label",
+                            "to_name": "text",
+                            "type": "labels",
+                            "value": {
+                                "start": labeled_match["start"],
+                                "end": labeled_match["end"],
+                                "score": 0.25,
+                                "text": labeled_match["text"],
+                                "labels": labeled_match["label"].value,
+                            },
+                }
+
+                id_count += 1
+                resultlist.append(result)
+
+            # These statistics are currently based on the first inwerkingtredingsbepaling found
             if (
                 check_result["label"] != InwerkingtredingsbepalingType.ONBEKEND
                 and check_result
@@ -78,49 +100,24 @@ class Command(BaseCommand):
                     check_result["label"]
                     == InwerkingtredingsbepalingType.DELEGATIE_EN_DIFFERENTIATIE
                 ):
-                    labels = [
-                        "Inwerkingtredingsbepaling met delegatie en differentiatie"
-                    ]
                     iwtr_d_d += 1
                 elif (
                     check_result["label"]
                     == InwerkingtredingsbepalingType.DELEGATIE_ZONDER_DIFFERENTIATIE
                 ):
-                    labels = [
-                        "Inwerkgintredingsbepaling met delegatie zonder differentiatie"
-                    ]
                     iwtr_d_zd += 1
                 elif (
                     check_result["label"]
                     == InwerkingtredingsbepalingType.GEEN_DELEGATIE
                 ):
-                    labels = ["Inwerkingtredingsbepaling zonder delegatie"]
                     iwtr_zd_zd += 1
-
-                resultlist = [
-                    {
-                        "id": "0",
-                        "from_name": "label",
-                        "to_name": "text",
-                        "type": "labels",
-                        "value": {
-                            "start": check_result["start"],
-                            "end": check_result["end"],
-                            "score": 0.25,
-                            "text": check_result["text"],
-                            "labels": labels,
-                        },
-                    }
-                ]
-
-                prediction = [
-                    {"model_version": "re-0.0.1", "score": 0.25, "result": resultlist}
-                ]
             else:
                 print(wet.preferred_url, "No matches found")
-                resultlist = []
-                prediction = []
                 iwtr_onbekend += 1
+
+            prediction = [
+                {"model_version": "re-0.0.1", "score": 0.25, "result": resultlist}
+            ]
 
             data.append(
                 {

@@ -72,13 +72,11 @@ def find_inwerkingtredingsbepaling(stb: Staatsblad) -> dict:
 
     matches = list(iwt_re.finditer(cleaned_text))
 
-    if len(matches) == 1:
-        m = matches[0]
+    labeled_matches = []
 
-        # find if it contains KB
-        matcheskb = list(kb_re.finditer(m.group(0)))
-
-        matchesdif = list(dif_re.finditer(m.group(0)))
+    for match in matches:
+        matcheskb = list(kb_re.finditer(match.group(0)))
+        matchesdif = list(dif_re.finditer(match.group(0)))
 
         if len(matcheskb) > 0 and len(matchesdif) > 0:
             label = InwerkingtredingsbepalingType.DELEGATIE_EN_DIFFERENTIATIE
@@ -87,17 +85,30 @@ def find_inwerkingtredingsbepaling(stb: Staatsblad) -> dict:
         else:
             label = InwerkingtredingsbepalingType.GEEN_DELEGATIE
 
-        result_dict["start"] = m.start(0)
-        result_dict["end"] = m.end(0)
-        result_dict["text"] = m.group(0)
-    else:
-        logger.debug(
-            "Multiple matches for inwerkingtredingsbepaling in %s, defaulting to onbekend",
-            stb,
+        labeled_matches.append(
+            {
+                "start": match.start(0),
+                "end": match.end(0),
+                "text": match.group(0),
+                "label": label
+            }
         )
-        label = InwerkingtredingsbepalingType.ONBEKEND
 
-    result_dict["label"] = label
+    logger.debug("Found %s", labeled_matches)
+
+    if len(labeled_matches) > 1:
+        logger.info("Found multiple inwerkingtredingsbepalingen for %s", stb)
+
+    if len(labeled_matches) > 0:
+        result_dict["start"] = labeled_matches[0]["start"]
+        result_dict["end"] = labeled_matches[0]["end"]
+        result_dict["text"] = labeled_matches[0]["text"]
+        result_dict["label"] = labeled_matches[0]["label"]
+    else:
+        logger.warning("No inwerkingtredingsbepalingen found")
+        result_dict["label"] = InwerkingtredingsbepalingType.ONBEKEND
+
+    result_dict["labeled_matches"] = labeled_matches
 
     return result_dict
 
