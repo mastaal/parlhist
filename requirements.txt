@@ -10,8 +10,9 @@ psycopg[binary,pool]>=3.1.18
 
 gunicorn>=21.2.0
 
-rq>=1.15.1
-django-rq>=2.8.1
-django-redis>=2.5.0
+#rq>=1.15.1
+#django-rq>=2.8.1
+#django-redis>=2.5.0
 
 numpy>=1.26.4
+rdflib>=7.1.3

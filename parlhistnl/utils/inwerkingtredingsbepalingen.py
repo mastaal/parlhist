@@ -14,8 +14,14 @@ import logging
 import re
 
 from enum import Enum
+from os import environ
+
+import requests
+
+from rdflib import Graph
 
 from parlhistnl.models import Staatsblad
+from parlhistnl.crawler.utils import CrawlerException
 
 logger = logging.getLogger(__name__)
 logging.getLogger("rdflib").setLevel(logging.CRITICAL)
@@ -40,6 +46,17 @@ dif_re: re.Pattern = re.compile(
 date_in_title_re: re.Pattern = re.compile(
     r"van\s+\d?\d\s+(januari|februari|maart|april|mei|juni|juli|augustus|september|oktober|november|december)\s+\d{4}\s+", re.IGNORECASE
 )
+
+try:
+    LIDO_COOKIES = {
+        "JSESSIONID": environ["PARLHIST_LIDO_JSESSIONID"],
+        "INGRESSCOOKIE": environ["PARLHIST_LIDO_INGRESSCOOKIE"]
+    }
+except KeyError:
+    logger.warning("Appropriate environment variables are not set; no LiDO authentication cookies set.")
+    LIDO_COOKIES = {}
+
+LIDO_GET_LINKS_API_URL = "https://linkeddata.overheid.nl/service/get-links"
 
 # All the Staatsblad.StaatsbladTypes which are a koninklijk besluit and which may contain any delegated
 # decisions on the inwerkingtredingsdatum of a wet.
@@ -191,3 +208,45 @@ def find_related_inwerkingtredingskb(stb: Staatsblad) -> set[Staatsblad]:
     # TODO: Search within the text itself if we haven't found anything
 
     return resultset
+
+
+def find_inwerkingtredingskb_via_lido(stb: Staatsblad) -> set[Staatsblad]:
+    """
+    Use the authenticated /get-links API endpoint from LiDO to find all Staatsblad publications which are a 'inwerkingtredingsbron'
+    for the given Staatsblad
+
+    Note: this implementation expects that you have defined PARLHIST_LIDO_JSESSIONID and PARLHIST_LIDO_INGRESSCOKIE environment
+    variables appropriately to authenticate with the LiDO API.
+
+    For more information on the API, please see https://linkeddata.overheid.nl/front/portal/services
+    """
+
+    params = {
+        "ext-id": f"OEP:{stb.stbid}"
+    }
+
+    try:
+        rdfxml_response = requests.get(LIDO_GET_LINKS_API_URL, params=params, cookies=LIDO_COOKIES, timeout=600)
+    except requests.exceptions.ReadTimeout as exc:
+        logger.fatal("RDF XML request timed out %s", exc)
+        raise CrawlerException from exc
+
+    if rdfxml_response.status_code != 200:
+        logger.critical("RDF XML request resulted in not-OK status code %s", rdfxml_response)
+        raise CrawlerException
+
+    rdfgraph = Graph()
+
+    rdfgraph.parse(rdfxml_response.content, format="xml")
+
+    # First, we find all the subjects that have the given stb-publication as a 'ontstaansbron'
+    ontstaan = rdfgraph.query(f"""
+                              SELECT *
+                              WHERE {{
+                                ?sub <http://linkeddata.overheid.nl/terms/refereertAan> ?obj .
+                                filter contains(?obj, 'linktype=http://linkeddata.overheid.nl/terms/linktype/id/bwb-ontstaansbron|target=oep|uri=OEP:{stb.stbid}')
+                              }}
+                              """
+                              )
+
+    return ontstaan, rdfgraph
