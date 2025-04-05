@@ -165,6 +165,7 @@ dataset/
 *.csv
 *.xlsx
 *.ods
+*.json
 
 memoized-requests
 *.tar.gz
