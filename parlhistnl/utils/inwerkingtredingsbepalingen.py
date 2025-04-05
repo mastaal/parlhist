@@ -18,9 +18,17 @@ from enum import Enum
 from parlhistnl.models import Staatsblad
 
 logger = logging.getLogger(__name__)
-iwt_re: re.Pattern = re.compile(
-    r"(de\s+artikelen\s+van\s+deze\s+(rijks)?wet\s+treden|deze\s+(rijks)?wet\s+treedt)(,?\s*met\s+uitzondering\s+van[\w,\s]+,\s*)?(,\s+onder\s+toepassing\s+van\s+artikel\s+12,\s+eerste lid,\s+van\s+de\s+Wet\s+raadgevend\s+referendum,)?\s+in\s+werking[\w,\s]+.(\s*indien[\w,\s]+.)?",
-    re.IGNORECASE,
+logging.getLogger("rdflib").setLevel(logging.CRITICAL)
+logging.getLogger("requests").setLevel(logging.CRITICAL)
+
+# iwt_re: re.Pattern = re.compile(
+#     r"(de\s+artikelen\s+van\s+deze\s+(rijks)?wet\s+treden|deze\s+(rijks)?wet\s+treedt)(,?\s*met\s+uitzondering\s+van[\w,\s]+,\s*)?(,\s+onder\s+toepassing\s+van\s+artikel\s+12,\s+eerste lid,\s+van\s+de\s+Wet\s+raadgevend\s+referendum,)?\s+in\s+werking[\w,:;().–\-\s\\/]+(?=artikel|(?<=.)lasten\s+en\s+bevelen)",
+#     re.IGNORECASE,
+# )
+
+iwt_re = re.compile(
+    r"(de\s+artikelen\s+van\s+deze\s+(rijks)?wet\s+treden|de(ze)?\s+(rijks)?wet(,?\s*met\s+uitzondering\s+van[\w,\s]+,\s*)?\s+treedt|indien\s+het\s+bij\s+(koninklijke\s+boodschap|geleidende\s+brief)\s+van\s+\d{1,2}\s+\w{3,12}\s+\d{4}\s+ingediende\s+voorstel\s+van\s+wet|onder\s+toepassing\s+van\s+[\w\s]+treedt\s+deze\s+wet\s+in\s+werking)[\w,:;().’–\-\s\\/]+(?=deze\s+wet\s+wordt\s+aangehaald\s+als|lasten\s+en\s+bevelen)",
+    re.IGNORECASE
 )
 
 kb_re: re.Pattern = re.compile(
