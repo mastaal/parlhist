@@ -27,13 +27,8 @@ logger = logging.getLogger(__name__)
 logging.getLogger("rdflib").setLevel(logging.CRITICAL)
 logging.getLogger("requests").setLevel(logging.CRITICAL)
 
-# iwt_re: re.Pattern = re.compile(
-#     r"(de\s+artikelen\s+van\s+deze\s+(rijks)?wet\s+treden|deze\s+(rijks)?wet\s+treedt)(,?\s*met\s+uitzondering\s+van[\w,\s]+,\s*)?(,\s+onder\s+toepassing\s+van\s+artikel\s+12,\s+eerste lid,\s+van\s+de\s+Wet\s+raadgevend\s+referendum,)?\s+in\s+werking[\w,:;().–\-\s\\/]+(?=artikel|(?<=.)lasten\s+en\s+bevelen)",
-#     re.IGNORECASE,
-# )
-
 iwt_re = re.compile(
-    r"(de\s+artikelen\s+van\s+deze\s+(rijks)?wet\s+treden|de(ze)?\s+(rijks)?wet(,?\s*met\s+uitzondering\s+van[\w,\s]+,\s*)?\s+treedt|indien\s+het\s+bij\s+(koninklijke\s+boodschap|geleidende\s+brief)\s+van\s+\d{1,2}\s+\w{3,12}\s+\d{4}\s+ingediende\s+voorstel\s+van\s+wet|onder\s+toepassing\s+van\s+[\w\s]+treedt\s+deze\s+wet\s+in\s+werking)[\w,:;().’–\-\s\\/]+(?=deze\s+wet\s+wordt\s+aangehaald\s+als|lasten\s+en\s+bevelen)",
+    r"(de\s+artikelen\s+van\s+deze\s+(rijks)?wet\s+treden|de(ze)?\s+(rijks)?wet(,?\s*met\s+uitzondering\s+van[\w,\s]+,\s*)?\s+(treedt|treden)|indien\s+het\s+bij\s+(koninklijke\s+boodschap|geleidende\s+brief)\s+van\s+\d{1,2}\s+\w{3,12}\s+\d{4}\s+ingediende\s+voorstel\s+van\s+wet|onder\s+toepassing\s+van\s+[\w\s]+treedt\s+deze\s+wet\s+in\s+werking)",
     re.IGNORECASE
 )
 
@@ -41,7 +36,7 @@ kb_re: re.Pattern = re.compile(
     r"bij\s+koninklijk\s+besluit\s+te\s+bepalen\s+tijdstip", re.IGNORECASE
 )
 dif_re: re.Pattern = re.compile(
-    r"verschillend\s+kan\s+worden\s+(vast)?gesteld", re.IGNORECASE
+    r"verschillend\s+kan\s+worden\s+((vast)?gesteld|bepaald)", re.IGNORECASE
 )
 date_in_title_re: re.Pattern = re.compile(
     r"van\s+\d?\d\s+(januari|februari|maart|april|mei|juni|juli|augustus|september|oktober|november|december)\s+\d{4}\s+", re.IGNORECASE
@@ -94,14 +89,20 @@ def find_inwerkingtredingsbepaling(stb: Staatsblad) -> dict:
     cleaned_text = f"{stb.preferred_url}\n{cleaned_text_1}"
 
     result_dict = {"cleaned_text": cleaned_text}
-
-    matches = list(iwt_re.finditer(cleaned_text))
-
     labeled_matches = []
 
-    for match in matches:
-        matcheskb = list(kb_re.finditer(match.group(0)))
-        matchesdif = list(dif_re.finditer(match.group(0)))
+    artikelen = stb.get_articles_list()
+    inwerkingtredingsartikelen = []
+
+    for artikel in artikelen:
+        if iwt_re.search(artikel) is not None:
+            inwerkingtredingsartikelen.append(artikel)
+
+    logger.debug("Found %s inwerkingtredingsbepalingen", len(inwerkingtredingsartikelen))
+
+    for inwerkingtredingsartikel in inwerkingtredingsartikelen:
+        matcheskb = list(kb_re.finditer(inwerkingtredingsartikel))
+        matchesdif = list(dif_re.finditer(inwerkingtredingsartikel))
 
         if len(matcheskb) > 0 and len(matchesdif) > 0:
             label = InwerkingtredingsbepalingType.DELEGATIE_EN_DIFFERENTIATIE
@@ -110,14 +111,23 @@ def find_inwerkingtredingsbepaling(stb: Staatsblad) -> dict:
         else:
             label = InwerkingtredingsbepalingType.GEEN_DELEGATIE
 
-        labeled_matches.append(
-            {
-                "start": match.start(0),
-                "end": match.end(0),
-                "text": match.group(0),
-                "label": label
-            }
-        )
+        # Look up the inwerkingtredingsartikel in the base text
+        cleaned_inwerkingtredingsartikel = inwerkingtredingsartikel.replace("\xa0", " ")
+
+        if cleaned_inwerkingtredingsartikel in cleaned_text:
+            start = cleaned_text.find(cleaned_inwerkingtredingsartikel)
+            end = start + len(cleaned_inwerkingtredingsartikel)
+
+            labeled_matches.append(
+                {
+                    "start": start,
+                    "end": end,
+                    "text": cleaned_inwerkingtredingsartikel,
+                    "label": label
+                }
+            )
+        else:
+            logger.critical("Could not look up the inwerkingtredingsbepaling in the original text")
 
     logger.debug("Found %s", labeled_matches)
 
