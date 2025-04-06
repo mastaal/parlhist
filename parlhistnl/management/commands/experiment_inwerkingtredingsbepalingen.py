@@ -41,8 +41,8 @@ class Command(BaseCommand):
                 Staatsblad.StaatsbladType.WET,
                 Staatsblad.StaatsbladType.RIJKSWET,
             ],
-            jaargang__gte=1995,
-        )
+            jaargang__in=list(range(1995, 2025)),
+        ).order_by("publicatiedatum")
 
         logger.info("Found %s wetten", wetten.count())
 
