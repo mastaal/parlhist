@@ -10,6 +10,7 @@
 
 import datetime
 import logging
+import re
 
 from bs4 import BeautifulSoup
 from django.db import models
@@ -327,9 +328,21 @@ class Staatsblad(models.Model):
         """Returns the stb-id in the form: stb-{jaargang}-{nummer}"""
         return f"stb-{self.jaargang}-{self.nummer}"
 
-    def get_articles_list(self) -> list[str]:
+    def get_articles_list(self, include_article_names=False) -> list[str]:
         """Returns a list with the text of all seperate articles as found using the raw html"""
 
         soup = BeautifulSoup(self.raw_html, "html.parser")
+        html_header_re = re.compile(r"h\d")
 
-        return [article_html.get_text() for article_html in soup.select("div.artikel")]
+        artikel_selector = "div.artikel"
+
+        if include_article_names:
+            return [artikel_html.get_text() for artikel_html in soup.select(artikel_selector)]
+        else:
+            artikelen_html = soup.select(artikel_selector)
+            for artikel_html in artikelen_html:
+                # Remove all the headers first
+                for header in artikel_html.find_all(html_header_re):
+                    header.extract()
+
+            return [artikel_html.get_text().strip() for artikel_html in artikelen_html]
