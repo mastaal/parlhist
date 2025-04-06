@@ -19,6 +19,23 @@ from parlhistnl.crawler.staatsblad import crawl_staatsblad
 
 class InwerkingtredingsbepalingenTestCase(TestCase):
 
+    def test_stb_1995_24(self):
+        # This act does not have an inwerkingtredingsbepaling but should have
+        stb: Staatsblad = crawl_staatsblad(1995, 24, preferred_url="https://zoek.officielebekendmakingen.nl/stb-1995-24.html")
+        res = find_inwerkingtredingsbepaling(stb)
+
+        print(res["labeled_matches"])
+        self.assertEqual(len(res["labeled_matches"]), 0)
+        self.assertEqual(res["label"], InwerkingtredingsbepalingType.ONBEKEND)
+
+    def test_stb_1995_158(self):
+        stb: Staatsblad = crawl_staatsblad(1995, 158, preferred_url="https://zoek.officielebekendmakingen.nl/stb-1995-158.html")
+        res = find_inwerkingtredingsbepaling(stb)
+
+        print(res["labeled_matches"])
+        self.assertGreater(len(res["labeled_matches"]), 0)
+        self.assertEqual(res["label"], InwerkingtredingsbepalingType.GEEN_DELEGATIE)
+
     def test_stb_1995_662(self):
         stb: Staatsblad = crawl_staatsblad(1995, 662, preferred_url="https://zoek.officielebekendmakingen.nl/stb-1995-662.html")
         res = find_inwerkingtredingsbepaling(stb)

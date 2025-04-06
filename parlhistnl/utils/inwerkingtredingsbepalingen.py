@@ -28,7 +28,7 @@ logging.getLogger("rdflib").setLevel(logging.CRITICAL)
 logging.getLogger("requests").setLevel(logging.CRITICAL)
 
 iwt_re = re.compile(
-    r"(de\s+artikelen\s+van\s+deze\s+(rijks)?wet\s+treden|de(ze)?\s+(rijks)?wet(,?\s*met\s+uitzondering\s+van[\w,\s]+,\s*)?\s+(treedt|treden)|indien\s+het\s+bij\s+(koninklijke\s+boodschap|geleidende\s+brief)\s+van\s+\d{1,2}\s+\w{3,12}\s+\d{4}\s+ingediende\s+voorstel\s+van\s+wet|onder\s+toepassing\s+van\s+[\w\s]+treedt\s+deze\s+wet\s+in\s+werking)",
+    r"(de\s+artikelen\s+van\s+deze\s+(rijks)?wet\s+treden|de(ze)?\s+(rijks)?wet(,?\s*met\s+uitzondering\s+van[\w,\s]+,\s*)?\s+(treedt|treden)|indien\s+het\s+bij\s+(koninklijke\s+boodschap|geleidende\s+brief)\s+van\s+\d{1,2}\s+\w{3,12}\s+\d{4}\s+ingediende\s+voorstel\s+van\s+wet\s+in\s+werking\s+treedt\s+,\s+treedt\s+deze\s+wet|onder\s+toepassing\s+van\s+[\w\s]+treedt\s+deze\s+wet\s+in\s+werking)",
     re.IGNORECASE
 )
 
@@ -82,9 +82,6 @@ def find_inwerkingtredingsbepaling(stb: Staatsblad) -> dict:
         start, end, text: if an inwerkingtredingsbepaling was found in the text, the start, end and actual text value of it.
     """
 
-    if stb.is_vaststelling_grond_grondwetswijziging:
-        label = InwerkingtredingsbepalingType.GEEN_INWERKINGTREDINGSBEPALING
-
     cleaned_text_1 = stb.tekst.replace("\xa0", " ")
     cleaned_text = f"{stb.preferred_url}\n{cleaned_text_1}"
 
@@ -129,16 +126,15 @@ def find_inwerkingtredingsbepaling(stb: Staatsblad) -> dict:
         else:
             logger.critical("Could not look up the inwerkingtredingsbepaling in the original text")
 
-    logger.debug("Found %s", labeled_matches)
-
-    if len(labeled_matches) > 1:
-        logger.info("Found multiple inwerkingtredingsbepalingen for %s", stb)
+    logger.debug("Found %s in %s", labeled_matches, stb.stbid)
 
     if len(labeled_matches) > 0:
         result_dict["start"] = labeled_matches[0]["start"]
         result_dict["end"] = labeled_matches[0]["end"]
         result_dict["text"] = labeled_matches[0]["text"]
         result_dict["label"] = labeled_matches[0]["label"]
+    elif stb.is_vaststelling_grond_grondwetswijziging:
+        result_dict["label"] = InwerkingtredingsbepalingType.GEEN_INWERKINGTREDINGSBEPALING
     else:
         logger.warning("No inwerkingtredingsbepalingen found")
         result_dict["label"] = InwerkingtredingsbepalingType.ONBEKEND
