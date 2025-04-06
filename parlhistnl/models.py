@@ -11,6 +11,7 @@
 import datetime
 import logging
 
+from bs4 import BeautifulSoup
 from django.db import models
 
 logger = logging.getLogger(__name__)
@@ -323,4 +324,12 @@ class Staatsblad(models.Model):
 
     @property
     def stbid(self) -> str:
+        """Returns the stb-id in the form: stb-{jaargang}-{nummer}"""
         return f"stb-{self.jaargang}-{self.nummer}"
+
+    def get_articles_list(self) -> list[str]:
+        """Returns a list with the text of all seperate articles as found using the raw html"""
+
+        soup = BeautifulSoup(self.raw_html, "html.parser")
+
+        return [article_html.get_text() for article_html in soup.select("div.artikel")]
