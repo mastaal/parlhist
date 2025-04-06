@@ -61,7 +61,6 @@ class Command(BaseCommand):
             # Handle special cases which never contain a inwerkingtredingsbepaling
             if wet.is_vaststelling_grond_grondwetswijziging:
                 vaststellingswet_grondwetswijziging += 1
-                continue
 
             if wet.is_goedkeuringswet_verdrag:
                 goedkeuringswet_verdrag += 1
@@ -93,7 +92,7 @@ class Command(BaseCommand):
             # These statistics are currently based on the first inwerkingtredingsbepaling found
             if (
                 check_result["label"] != InwerkingtredingsbepalingType.ONBEKEND
-                and check_result
+                and check_result["label"]
                 != InwerkingtredingsbepalingType.GEEN_INWERKINGTREDINGSBEPALING
             ):
                 if (
@@ -137,6 +136,7 @@ class Command(BaseCommand):
         ) as jsonfile:
             json.dump(data, jsonfile)
 
+        print(f"Totaal wetten: {wetten.count()}")
         print("Dumped wetten:", len(data))
         print(f"inwerkingtreding met delegatie, met differentiatie: {iwtr_d_d}")
         print(f"inwerkingtreding met delegatie, zonder differentiatie: {iwtr_d_zd}")
