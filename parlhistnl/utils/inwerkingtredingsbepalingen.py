@@ -10,6 +10,7 @@
     SPDX-License-Identifier: EUPL-1.2
 """
 
+import datetime
 import logging
 import re
 
@@ -18,7 +19,7 @@ from os import environ
 
 import requests
 
-from rdflib import Graph
+from rdflib import Graph, URIRef
 
 from parlhistnl.models import Staatsblad
 from parlhistnl.crawler.utils import CrawlerException
@@ -33,7 +34,7 @@ iwt_re = re.compile(
 )
 
 kb_re: re.Pattern = re.compile(
-    r"bij\s+koninklijk\s+besluit\s+te\s+bepalen\s+tijdstip", re.IGNORECASE
+    r"bij\s+koninklijk\s+besluit\s+(te\s+bepalen|vast\s+te\s+stellen)\s+tijdstip", re.IGNORECASE
 )
 dif_re: re.Pattern = re.compile(
     r"verschillend\s+kan\s+worden\s+((vast)?gesteld|bepaald)", re.IGNORECASE
@@ -246,6 +247,7 @@ def find_inwerkingtredingskb_via_lido(stb: Staatsblad) -> set[Staatsblad]:
     rdfgraph.parse(rdfxml_response.content, format="xml")
 
     # First, we find all the subjects that have the given stb-publication as a 'ontstaansbron'
+    # TODO possibly this query can be rewritten to only get artikelen in the first place
     ontstaan = rdfgraph.query(f"""
                               SELECT *
                               WHERE {{
@@ -255,4 +257,64 @@ def find_inwerkingtredingskb_via_lido(stb: Staatsblad) -> set[Staatsblad]:
                               """
                               )
 
-    return ontstaan, rdfgraph
+    # We want to get inwerkingtredingsinformation on article-basis, so we need to find all articles
+    # in ontstaan that have match ?sub <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://linkeddata.overheid.nl/terms/Artikel>
+    ontstaan_artikelen = []
+
+    rdf_type_predicate = URIRef("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+    artikel_type = URIRef("http://linkeddata.overheid.nl/terms/Artikel")
+    for result in ontstaan:
+        subj = result.sub
+        subject_type = rdfgraph.value(subject=subj, predicate=rdf_type_predicate, object=None)
+
+        if subject_type == artikel_type:
+            logger.debug("%s if of type artikel, adding", subj)
+            ontstaan_artikelen.append(subj)
+        else:
+            logger.debug("%s has type %s, not artikel", subj, subject_type)
+        # TODO error handle if value is none
+
+    artikelen_inwerkingtredingsinformatie = {}
+    # Now that we have all the articles that were created in this stb publication, we can search for
+    # when these articles entered into force
+    for artikel in ontstaan_artikelen:
+        inwerkingtredingsbron_query_result = rdfgraph.query(f"""
+                                               SELECT ?obj
+                                               WHERE {{
+                                                    {artikel.n3()} <http://linkeddata.overheid.nl/terms/refereertAan> ?obj .
+                                                    filter contains(?obj, 'bwb-inwerkingtredingsbron')
+                                               }}
+                                               """)
+
+        # The objects for this predicate are all of type string (http://www.w3.org/2001/XMLSchema#string)
+        # but have the following structure:
+        # 'linktype=http://linkeddata.overheid.nl/terms/linktype/id/bwb-inwerkingtredingsbron|target=oep|uri=OEP:stb-2024-197'
+        # We're interested here in the OEP uri.
+
+        inwerkingtredingsbronnen = list(inwerkingtredingsbron_query_result)
+
+        # Try to find the inwerkingtredingsdatum
+        inwerkingtredingsdatum_obj = rdfgraph.value(subject=artikel, predicate=URIRef("http://linkeddata.overheid.nl/terms/heeftInwerkingtredingsdatum"), object=None)
+        if inwerkingtredingsdatum_obj is not None:
+            inwerkingtredingsdatum: datetime.date = inwerkingtredingsdatum_obj.value
+        else:
+            # We use January 1st 1800 as a marker for 'no inwerkingtredingsdatum found'
+            logger.warning("No inwerkingtredingsdatum found for %s", artikel)
+            inwerkingtredingsdatum = datetime.date(1800, 1, 1)
+
+        artikelen_inwerkingtredingsinformatie[artikel] = {"inwerkingtredingsdatum": inwerkingtredingsdatum.strftime("%Y-%m-%d"), "inwerkingtredingsbronnen": []}
+        if len(inwerkingtredingsbronnen) == 0:
+            logger.warning("Could not find any inwerkingtredingsbronnen for %s", artikel)
+        else:
+            for inwerkingtredingsbron_triple in inwerkingtredingsbronnen:
+                inwerkingtredingsbron = inwerkingtredingsbron_triple.obj
+                inwerkingtredingsbron_list = inwerkingtredingsbron.value.split('|')
+                for item in inwerkingtredingsbron_list:
+                    if item.startswith('uri=OEP:'):
+                        # This item is the form of: uri=OEP:stb-2024-197
+                        inwerkingtredingsbron_stbid = item.split(':')[1]
+                        logger.debug("Identified %s as inwerkingtredingsbron for %s", inwerkingtredingsbron_stbid, artikel)
+                        _, jaargang_str, nummer_str = inwerkingtredingsbron_stbid.split('-')
+                        artikelen_inwerkingtredingsinformatie[artikel]["inwerkingtredingsbronnen"].append({"jaargang": int(jaargang_str), "nummer": int(nummer_str)})
+
+    return artikelen_inwerkingtredingsinformatie, rdfgraph
