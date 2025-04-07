@@ -231,7 +231,9 @@ def find_related_inwerkingtredingskb(stb: Staatsblad) -> set[Staatsblad]:
     return resultset
 
 
-def find_inwerkingtredingskb_via_lido(stb: Staatsblad) -> set[Staatsblad]:
+def find_inwerkingtredingskb_via_lido(
+    stb: Staatsblad,
+) -> tuple[set[Staatsblad], set[datetime.date], dict, Graph]:
     """
     Use the authenticated /get-links API endpoint from LiDO to find all Staatsblad publications which are a 'inwerkingtredingsbron'
     for the given Staatsblad
@@ -240,6 +242,12 @@ def find_inwerkingtredingskb_via_lido(stb: Staatsblad) -> set[Staatsblad]:
     variables appropriately to authenticate with the LiDO API.
 
     For more information on the API, please see https://linkeddata.overheid.nl/front/portal/services
+
+    Returns a tuple with:
+        - a set of Staatsblad publicaties which contain the inwerkingtredingsbron for articles in this stb
+        - a set of inwerkingtredingsdates for articles in this stb
+        - a dictionary with complete per-article information
+        - the original rdf graph
     """
 
     params = {"ext-id": f"OEP:{stb.stbid}"}
@@ -263,12 +271,13 @@ def find_inwerkingtredingskb_via_lido(stb: Staatsblad) -> set[Staatsblad]:
     rdfgraph.parse(rdfxml_response.content, format="xml")
 
     # First, we find all the subjects that have the given stb-publication as a 'ontstaansbron'
-    # TODO possibly this query can be rewritten to only get artikelen in the first place
+    # and are of type Artikel
     ontstaan = rdfgraph.query(
         f"""
                               SELECT *
                               WHERE {{
                                 ?sub <http://linkeddata.overheid.nl/terms/refereertAan> ?obj .
+                                ?sub <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://linkeddata.overheid.nl/terms/Artikel> .
                                 filter contains(?obj, 'linktype=http://linkeddata.overheid.nl/terms/linktype/id/bwb-ontstaansbron|target=oep|uri=OEP:{stb.stbid}')
                               }}
                               """
@@ -276,24 +285,12 @@ def find_inwerkingtredingskb_via_lido(stb: Staatsblad) -> set[Staatsblad]:
 
     # We want to get inwerkingtredingsinformation on article-basis, so we need to find all articles
     # in ontstaan that have match ?sub <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://linkeddata.overheid.nl/terms/Artikel>
-    ontstaan_artikelen = []
-
-    rdf_type_predicate = URIRef("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
-    artikel_type = URIRef("http://linkeddata.overheid.nl/terms/Artikel")
-    for result in ontstaan:
-        subj = result.sub
-        subject_type = rdfgraph.value(
-            subject=subj, predicate=rdf_type_predicate, object=None
-        )
-
-        if subject_type == artikel_type:
-            logger.debug("%s if of type artikel, adding", subj)
-            ontstaan_artikelen.append(subj)
-        else:
-            logger.debug("%s has type %s, not artikel", subj, subject_type)
-        # TODO error handle if value is none
+    ontstaan_artikelen = [artikel.sub for artikel in ontstaan]
 
     artikelen_inwerkingtredingsinformatie = {}
+    inwerkingtredingskbs = set()
+    inwerkingtredingsdata = set()
+
     # Now that we have all the articles that were created in this stb publication, we can search for
     # when these articles entered into force
     for artikel in ontstaan_artikelen:
@@ -306,12 +303,6 @@ def find_inwerkingtredingskb_via_lido(stb: Staatsblad) -> set[Staatsblad]:
                                                }}
                                                """
         )
-
-        # The objects for this predicate are all of type string (http://www.w3.org/2001/XMLSchema#string)
-        # but have the following structure:
-        # 'linktype=http://linkeddata.overheid.nl/terms/linktype/id/bwb-inwerkingtredingsbron|target=oep|uri=OEP:stb-2024-197'
-        # We're interested here in the OEP uri.
-
         inwerkingtredingsbronnen = list(inwerkingtredingsbron_query_result)
 
         # Try to find the inwerkingtredingsdatum
@@ -329,6 +320,17 @@ def find_inwerkingtredingskb_via_lido(stb: Staatsblad) -> set[Staatsblad]:
             logger.warning("No inwerkingtredingsdatum found for %s", artikel)
             inwerkingtredingsdatum = datetime.date(1800, 1, 1)
 
+        inwerkingtredingsdata.add(inwerkingtredingsdatum)
+        logger.debug(
+            "Identified %s as inwerkingtredingsdatum for %s",
+            inwerkingtredingsdatum,
+            artikel,
+        )
+
+        # The objects for this predicate are all of type string (http://www.w3.org/2001/XMLSchema#string)
+        # but they have the following structure:
+        # 'linktype=http://linkeddata.overheid.nl/terms/linktype/id/bwb-inwerkingtredingsbron|target=oep|uri=OEP:stb-2024-197'
+        # We're interested here in the OEP uri.
         artikelen_inwerkingtredingsinformatie[artikel] = {
             "inwerkingtredingsdatum": inwerkingtredingsdatum.strftime("%Y-%m-%d"),
             "inwerkingtredingsbronnen": [],
@@ -353,10 +355,27 @@ def find_inwerkingtredingskb_via_lido(stb: Staatsblad) -> set[Staatsblad]:
                         _, jaargang_str, nummer_str = inwerkingtredingsbron_stbid.split(
                             "-"
                         )
+
+                        jaargang = int(jaargang_str)
+                        nummer = int(nummer_str)
+
                         artikelen_inwerkingtredingsinformatie[artikel][
                             "inwerkingtredingsbronnen"
-                        ].append(
-                            {"jaargang": int(jaargang_str), "nummer": int(nummer_str)}
-                        )
+                        ].append({"jaargang": jaargang, "nummer": nummer})
 
-    return artikelen_inwerkingtredingsinformatie, rdfgraph
+                        try:
+                            inwerkingtredingsstb = Staatsblad.objects.get(
+                                jaargang=jaargang, nummer=nummer
+                            )
+                            inwerkingtredingskbs.add(inwerkingtredingsstb)
+                        except Staatsblad.DoesNotExist:
+                            logger.warning(
+                                "Could not find the inwerkingtredingskb in database: stb-%s-%s (for artikel %s)",
+                            )
+
+    return (
+        inwerkingtredingskbs,
+        inwerkingtredingsdata,
+        artikelen_inwerkingtredingsinformatie,
+        rdfgraph,
+    )
