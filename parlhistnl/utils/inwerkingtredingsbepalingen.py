@@ -30,33 +30,41 @@ logging.getLogger("requests").setLevel(logging.CRITICAL)
 
 iwt_re = re.compile(
     r"(de\s+artikelen\s+van\s+deze\s+(rijks)?wet\s+treden|de(ze)?\s+(rijks)?wet(,?\s*met\s+uitzondering\s+van[\w,\s]+,\s*)?\s+(treedt|treden)|indien\s+het\s+bij\s+(koninklijke\s+boodschap|geleidende\s+brief)\s+van\s+\d{1,2}\s+\w{3,12}\s+\d{4}\s+ingediende\s+voorstel\s+van\s+wet\s+in\s+werking\s+treedt\s+,\s+treedt\s+deze\s+wet|onder\s+toepassing\s+van\s+[\w\s]+treedt\s+deze\s+wet\s+in\s+werking)",
-    re.IGNORECASE
+    re.IGNORECASE,
 )
 
 kb_re: re.Pattern = re.compile(
-    r"bij\s+koninklijk\s+besluit\s+(te\s+bepalen|vast\s+te\s+stellen)\s+tijdstip", re.IGNORECASE
+    r"bij\s+koninklijk\s+besluit\s+(te\s+bepalen|vast\s+te\s+stellen)\s+tijdstip",
+    re.IGNORECASE,
 )
 dif_re: re.Pattern = re.compile(
     r"verschillend\s+kan\s+worden\s+((vast)?gesteld|bepaald)", re.IGNORECASE
 )
 date_in_title_re: re.Pattern = re.compile(
-    r"van\s+\d?\d\s+(januari|februari|maart|april|mei|juni|juli|augustus|september|oktober|november|december)\s+\d{4}\s+", re.IGNORECASE
+    r"van\s+\d?\d\s+(januari|februari|maart|april|mei|juni|juli|augustus|september|oktober|november|december)\s+\d{4}\s+",
+    re.IGNORECASE,
 )
 
 try:
     LIDO_COOKIES = {
         "JSESSIONID": environ["PARLHIST_LIDO_JSESSIONID"],
-        "INGRESSCOOKIE": environ["PARLHIST_LIDO_INGRESSCOOKIE"]
+        "INGRESSCOOKIE": environ["PARLHIST_LIDO_INGRESSCOOKIE"],
     }
 except KeyError:
-    logger.warning("Appropriate environment variables are not set; no LiDO authentication cookies set.")
+    logger.warning(
+        "Appropriate environment variables are not set; no LiDO authentication cookies set."
+    )
     LIDO_COOKIES = {}
 
 LIDO_GET_LINKS_API_URL = "https://linkeddata.overheid.nl/service/get-links"
 
 # All the Staatsblad.StaatsbladTypes which are a koninklijk besluit and which may contain any delegated
 # decisions on the inwerkingtredingsdatum of a wet.
-STAATSBLADTYPES_KB = [Staatsblad.StaatsbladType.KKB, Staatsblad.StaatsbladType.AMVB, Staatsblad.StaatsbladType.RIJKSAMVB]
+STAATSBLADTYPES_KB = [
+    Staatsblad.StaatsbladType.KKB,
+    Staatsblad.StaatsbladType.AMVB,
+    Staatsblad.StaatsbladType.RIJKSAMVB,
+]
 
 
 class InwerkingtredingsbepalingType(Enum):
@@ -96,7 +104,9 @@ def find_inwerkingtredingsbepaling(stb: Staatsblad) -> dict:
         if iwt_re.search(artikel) is not None:
             inwerkingtredingsartikelen.append(artikel)
 
-    logger.debug("Found %s inwerkingtredingsbepalingen", len(inwerkingtredingsartikelen))
+    logger.debug(
+        "Found %s inwerkingtredingsbepalingen", len(inwerkingtredingsartikelen)
+    )
 
     for inwerkingtredingsartikel in inwerkingtredingsartikelen:
         matcheskb = list(kb_re.finditer(inwerkingtredingsartikel))
@@ -121,11 +131,13 @@ def find_inwerkingtredingsbepaling(stb: Staatsblad) -> dict:
                     "start": start,
                     "end": end,
                     "text": cleaned_inwerkingtredingsartikel,
-                    "label": label
+                    "label": label,
                 }
             )
         else:
-            logger.critical("Could not look up the inwerkingtredingsbepaling in the original text")
+            logger.critical(
+                "Could not look up the inwerkingtredingsbepaling in the original text"
+            )
 
     logger.debug("Found %s in %s", labeled_matches, stb.stbid)
 
@@ -135,7 +147,9 @@ def find_inwerkingtredingsbepaling(stb: Staatsblad) -> dict:
         result_dict["text"] = labeled_matches[0]["text"]
         result_dict["label"] = labeled_matches[0]["label"]
     elif stb.is_vaststelling_grond_grondwetswijziging:
-        result_dict["label"] = InwerkingtredingsbepalingType.GEEN_INWERKINGTREDINGSBEPALING
+        result_dict["label"] = (
+            InwerkingtredingsbepalingType.GEEN_INWERKINGTREDINGSBEPALING
+        )
     else:
         logger.warning("No inwerkingtredingsbepalingen found")
         result_dict["label"] = InwerkingtredingsbepalingType.ONBEKEND
@@ -169,7 +183,7 @@ def find_related_inwerkingtredingskb(stb: Staatsblad) -> set[Staatsblad]:
     kkbs_metadata_xml_stb_ref = Staatsblad.objects.filter(
         staatsblad_type__in=STAATSBLADTYPES_KB,
         raw_metadata_xml__icontains=f"Stb. {stb.jaargang}, {stb.nummer}",
-        publicatiedatum__gte=stb.publicatiedatum  # Assume that the inwerkingtredingskb is never younger than the stb
+        publicatiedatum__gte=stb.publicatiedatum,  # Assume that the inwerkingtredingskb is never younger than the stb
     )
 
     # logger.info(kkbs_metadata_xml_stb_ref)
@@ -185,7 +199,7 @@ def find_related_inwerkingtredingskb(stb: Staatsblad) -> set[Staatsblad]:
         kkbs_metadata_xml_citeertitel = Staatsblad.objects.filter(
             staatsblad_type__in=STAATSBLADTYPES_KB,
             raw_metadata_xml__icontains=citeertitel,
-            publicatiedatum__gte=stb.publicatiedatum
+            publicatiedatum__gte=stb.publicatiedatum,
         )
 
         # logger.info(kkbs_metadata_xml_citeertitel)
@@ -196,7 +210,7 @@ def find_related_inwerkingtredingskb(stb: Staatsblad) -> set[Staatsblad]:
         kkbs_metadata_xml_full_title = Staatsblad.objects.filter(
             staatsblad_type__in=STAATSBLADTYPES_KB,
             raw_metadata_xml__icontains=stb.titel,
-            publicatiedatum__gte=stb.publicatiedatum
+            publicatiedatum__gte=stb.publicatiedatum,
         )
 
         resultset.update(kkbs_metadata_xml_full_title)
@@ -207,7 +221,7 @@ def find_related_inwerkingtredingskb(stb: Staatsblad) -> set[Staatsblad]:
         kkbs_metadata_xml_full_title_no_date = Staatsblad.objects.filter(
             staatsblad_type__in=STAATSBLADTYPES_KB,
             raw_metadata_xml__icontains=stb_title_without_date,
-            publicatiedatum__gte=stb.publicatiedatum
+            publicatiedatum__gte=stb.publicatiedatum,
         )
 
         resultset.update(kkbs_metadata_xml_full_title_no_date)
@@ -228,18 +242,20 @@ def find_inwerkingtredingskb_via_lido(stb: Staatsblad) -> set[Staatsblad]:
     For more information on the API, please see https://linkeddata.overheid.nl/front/portal/services
     """
 
-    params = {
-        "ext-id": f"OEP:{stb.stbid}"
-    }
+    params = {"ext-id": f"OEP:{stb.stbid}"}
 
     try:
-        rdfxml_response = requests.get(LIDO_GET_LINKS_API_URL, params=params, cookies=LIDO_COOKIES, timeout=600)
+        rdfxml_response = requests.get(
+            LIDO_GET_LINKS_API_URL, params=params, cookies=LIDO_COOKIES, timeout=600
+        )
     except requests.exceptions.ReadTimeout as exc:
         logger.fatal("RDF XML request timed out %s", exc)
         raise CrawlerException from exc
 
     if rdfxml_response.status_code != 200:
-        logger.critical("RDF XML request resulted in not-OK status code %s", rdfxml_response)
+        logger.critical(
+            "RDF XML request resulted in not-OK status code %s", rdfxml_response
+        )
         raise CrawlerException
 
     rdfgraph = Graph()
@@ -248,14 +264,15 @@ def find_inwerkingtredingskb_via_lido(stb: Staatsblad) -> set[Staatsblad]:
 
     # First, we find all the subjects that have the given stb-publication as a 'ontstaansbron'
     # TODO possibly this query can be rewritten to only get artikelen in the first place
-    ontstaan = rdfgraph.query(f"""
+    ontstaan = rdfgraph.query(
+        f"""
                               SELECT *
                               WHERE {{
                                 ?sub <http://linkeddata.overheid.nl/terms/refereertAan> ?obj .
                                 filter contains(?obj, 'linktype=http://linkeddata.overheid.nl/terms/linktype/id/bwb-ontstaansbron|target=oep|uri=OEP:{stb.stbid}')
                               }}
                               """
-                              )
+    )
 
     # We want to get inwerkingtredingsinformation on article-basis, so we need to find all articles
     # in ontstaan that have match ?sub <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://linkeddata.overheid.nl/terms/Artikel>
@@ -265,7 +282,9 @@ def find_inwerkingtredingskb_via_lido(stb: Staatsblad) -> set[Staatsblad]:
     artikel_type = URIRef("http://linkeddata.overheid.nl/terms/Artikel")
     for result in ontstaan:
         subj = result.sub
-        subject_type = rdfgraph.value(subject=subj, predicate=rdf_type_predicate, object=None)
+        subject_type = rdfgraph.value(
+            subject=subj, predicate=rdf_type_predicate, object=None
+        )
 
         if subject_type == artikel_type:
             logger.debug("%s if of type artikel, adding", subj)
@@ -278,13 +297,15 @@ def find_inwerkingtredingskb_via_lido(stb: Staatsblad) -> set[Staatsblad]:
     # Now that we have all the articles that were created in this stb publication, we can search for
     # when these articles entered into force
     for artikel in ontstaan_artikelen:
-        inwerkingtredingsbron_query_result = rdfgraph.query(f"""
+        inwerkingtredingsbron_query_result = rdfgraph.query(
+            f"""
                                                SELECT ?obj
                                                WHERE {{
                                                     {artikel.n3()} <http://linkeddata.overheid.nl/terms/refereertAan> ?obj .
                                                     filter contains(?obj, 'bwb-inwerkingtredingsbron')
                                                }}
-                                               """)
+                                               """
+        )
 
         # The objects for this predicate are all of type string (http://www.w3.org/2001/XMLSchema#string)
         # but have the following structure:
@@ -294,7 +315,13 @@ def find_inwerkingtredingskb_via_lido(stb: Staatsblad) -> set[Staatsblad]:
         inwerkingtredingsbronnen = list(inwerkingtredingsbron_query_result)
 
         # Try to find the inwerkingtredingsdatum
-        inwerkingtredingsdatum_obj = rdfgraph.value(subject=artikel, predicate=URIRef("http://linkeddata.overheid.nl/terms/heeftInwerkingtredingsdatum"), object=None)
+        inwerkingtredingsdatum_obj = rdfgraph.value(
+            subject=artikel,
+            predicate=URIRef(
+                "http://linkeddata.overheid.nl/terms/heeftInwerkingtredingsdatum"
+            ),
+            object=None,
+        )
         if inwerkingtredingsdatum_obj is not None:
             inwerkingtredingsdatum: datetime.date = inwerkingtredingsdatum_obj.value
         else:
@@ -302,19 +329,34 @@ def find_inwerkingtredingskb_via_lido(stb: Staatsblad) -> set[Staatsblad]:
             logger.warning("No inwerkingtredingsdatum found for %s", artikel)
             inwerkingtredingsdatum = datetime.date(1800, 1, 1)
 
-        artikelen_inwerkingtredingsinformatie[artikel] = {"inwerkingtredingsdatum": inwerkingtredingsdatum.strftime("%Y-%m-%d"), "inwerkingtredingsbronnen": []}
+        artikelen_inwerkingtredingsinformatie[artikel] = {
+            "inwerkingtredingsdatum": inwerkingtredingsdatum.strftime("%Y-%m-%d"),
+            "inwerkingtredingsbronnen": [],
+        }
         if len(inwerkingtredingsbronnen) == 0:
-            logger.warning("Could not find any inwerkingtredingsbronnen for %s", artikel)
+            logger.warning(
+                "Could not find any inwerkingtredingsbronnen for %s", artikel
+            )
         else:
             for inwerkingtredingsbron_triple in inwerkingtredingsbronnen:
                 inwerkingtredingsbron = inwerkingtredingsbron_triple.obj
-                inwerkingtredingsbron_list = inwerkingtredingsbron.value.split('|')
+                inwerkingtredingsbron_list = inwerkingtredingsbron.value.split("|")
                 for item in inwerkingtredingsbron_list:
-                    if item.startswith('uri=OEP:'):
+                    if item.startswith("uri=OEP:"):
                         # This item is the form of: uri=OEP:stb-2024-197
-                        inwerkingtredingsbron_stbid = item.split(':')[1]
-                        logger.debug("Identified %s as inwerkingtredingsbron for %s", inwerkingtredingsbron_stbid, artikel)
-                        _, jaargang_str, nummer_str = inwerkingtredingsbron_stbid.split('-')
-                        artikelen_inwerkingtredingsinformatie[artikel]["inwerkingtredingsbronnen"].append({"jaargang": int(jaargang_str), "nummer": int(nummer_str)})
+                        inwerkingtredingsbron_stbid = item.split(":")[1]
+                        logger.debug(
+                            "Identified %s as inwerkingtredingsbron for %s",
+                            inwerkingtredingsbron_stbid,
+                            artikel,
+                        )
+                        _, jaargang_str, nummer_str = inwerkingtredingsbron_stbid.split(
+                            "-"
+                        )
+                        artikelen_inwerkingtredingsinformatie[artikel][
+                            "inwerkingtredingsbronnen"
+                        ].append(
+                            {"jaargang": int(jaargang_str), "nummer": int(nummer_str)}
+                        )
 
     return artikelen_inwerkingtredingsinformatie, rdfgraph
