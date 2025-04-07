@@ -16,6 +16,7 @@ from bs4 import BeautifulSoup
 from django.db import models
 
 logger = logging.getLogger(__name__)
+stb_id_pattern = re.compile(r"^stb-\d{4}-\d+$")
 
 
 class Vergadering(models.Model):
@@ -190,6 +191,19 @@ class Kamerstuk(models.Model):
         return f"https://zoek.officielebekendmakingen.nl/kst-{self.hoofddossier.dossiernummer}-{self.ondernummer}.html"
 
 
+class StaatsbladManager(models.Manager):
+    """Custom manager for Staatsblad model"""
+
+    def get_staatsblad_from_stbid(self, stbid: str):
+        """Get a Staatsblad object using an id that is in the form of stb-2024-193"""
+
+        if stb_id_pattern.match(stbid) is not None:
+            _, jaargang_str, nummer_str = stbid.split('-')
+            jaargang = int(jaargang_str)
+            nummer = int(nummer_str)
+            return self.get(jaargang=jaargang, nummer=nummer)
+
+
 class Staatsblad(models.Model):
     """Model for a publication in the Staatsblad"""
 
@@ -228,6 +242,8 @@ class Staatsblad(models.Model):
     )
 
     preferred_url = models.URLField(null=True)
+
+    objects = StaatsbladManager()
 
     class Meta:
         """Meta information for django"""
