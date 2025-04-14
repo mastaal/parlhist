@@ -1,34 +1,40 @@
 # parlhist
 
 `parlhist` (working title) is a Python application intended to enable more empirical and statistical
-academic studies of parliamentary minutes and documents. It is developed at the Institute of Public Law of the
-Leiden Law School (Leiden University, the Netherlands), in order to investigate in a more empiric manner
-the role of the Dutch Constitution in Dutch parliamentary debates.
+academic studies of Dutch parliamentary minutes and documents. `parlhist` was initially developed at
+the Department of Constitutional and Administrative Law of Leiden Law School (Lieden University, the
+Netherlands) in order to investigate in a more empiric manner the role of the Dutch Constitution in
+Dutch parliamentary debates. Afterwards, `parlhist` has been expanded for various different types of research.
 
-The data used by this program is retrieved from the official publications by the Dutch Government.
-More information can be found on [the page of this dataset on data.overheid.nl](https://data.overheid.nl/dataset/officiele-bekendmakingen#panel-description). [The API reference of the SRU API by KOOP can be found here](https://data.overheid.nl/sites/default/files/dataset/d0cca537-44ea-48cf-9880-fa21e1a7058f/resources/Handleiding%2BSRU%2B2.0.pdf).
+`parlhist` enables more empirical study of these documents by providing an accessible an local
+interface for various types of official governmental publications. Using `parlhist`, one can easily
+download the documents of interest without having to deal with the API. `parlhist` enriches some data
+also with extra metadata. Once downloaded and enriched, the user can use `parlhist` to develop their
+own experiments.
 
-## Current features
+The data used by `parlhist` is retrieved from the official publications by the Dutch Government.
+More information can be found on [the page of this dataset on data.overheid.nl](https://data.overheid.nl/dataset/officiele-bekendmakingen#panel-description).
+[The API reference of the SRU API by KOOP can be found here](https://data.overheid.nl/sites/default/files/dataset/d0cca537-44ea-48cf-9880-fa21e1a7058f/resources/Handleiding%2BSRU%2B2.0.pdf).
 
-Currently, `parlhist` can be used to easily crawl all the Dutch parliamentary minutes (Handelingen) and
-related documents (Kamerstukken). These documents are stored in a database and can be easily queried
-using the Django database-abstraction API (or by querying the database directly). Additionally, new
-Django commands can be written to write automated experiments.
+If you are new to empirical study of governmental documents, [be sure to check out WetSuite!](https://www.wetsuite.nl/)
+WetSuite aims to help scholars to leverage more empirical and NLP-based research methods when studying governmental documents, and has a lot of useful resources on their website.
 
-## Planned ideas
+## Data accessible via parlhist
+* Handelingen (Dutch parliamentary minutes) from parliamentary year 2011/12 through now.
+* Kamerstukken (Dutch parliamentary documents) from calendar year 1995 until now.
+* Staatsblad (the main Dutch government gazette) from calendar year 1995 until now.
 
-* More advanced natural language processing to get more insight than just counting matches.
-* Support for decentralized democratic bodies in the Netherlands (Provinciale Staten, Gemeenteraden, Algemeen besturen van Waterschappen).
-* Web interface to make queries
-* Store experiment results in database
-* Support for parliamentary history from before parliamentary year 2011-2012
+## Features
+* **Extendible**: `parlhist` can be easily extended, as it is based on the [Django web framework](https://www.djangoproject.com/). Data can be easily queried using the Django database-abstraction API, new experiments can be added as new Django commands, or you could even add a complete interactive web-interface to your experiment.
+* **Free and open source**: `parlhist` is available under the European Union Public License v1.2 (EUPL-1.2) or any later version. You can use and change `parlhist` for any goal. If you share your changes to `parlhist`, you must share these under the same license. [Please consult the full license for more information](/LICENSE).
+* **Automatic memoization** of crawling results: remote data is saved locally in a raw form. When developing `parlhist`, this allows you to quickly rebuild your local database without sending a lot of outbound network requests.
 
-## Requirements
+## Usage
+
+### Requirements
 
 * A database, preferably PostgreSQL. For small datasets and experiments, SQLite may suffice. But be aware that the software is only tested on PostgreSQL.
 * A machine to run `parlhist` on, preferably a (recent) Linux machine. The software might work on other operating systems. On Windows, using Windows Subsystem for Linux (WSL) may be a good option.
-
-## Usage
 
 ### Installation
 Clone the repository:
@@ -64,8 +70,9 @@ $ ./manage.py handeling_crawl_uncrawled_behandelde_kamerstukken
 ```
 Depending on how many years of data you have crawled, this may take several hours.
 
-Alternatively, you can run the `initialize_database.sh` shell script, which initializes the database with
-all Handelingen of both the Eerste Kamer and Tweede Kamer of the parliamentary years 2011/2012 through 2022/2023, and the related Kamerstukken.
+Alternatively, you can run the `initialize_database_handelingen.sh` shell script, which initializes
+the database with all Handelingen of both the Eerste Kamer and Tweede Kamer of the parliamentary years
+2011/2012 through 2022/2023, and the related Kamerstukken.
 
 ### Note on memoization
 By default, `parlhist` stores all responses it gets in a raw format. If you want to re-create your database,
@@ -87,6 +94,14 @@ json, etc.), and do the data analysis in some other tool (a Jupyter Notebook for
 
 None yet. Stay tuned!
 
+## Contribute
+You can contribute in various ways to `parlhist`:
+* By using `parlhist` for your research and sharing your experience and results.
+* By sharing your modifications and additions to the `parlhist` code.
+* By citing `parlhist` when you have used it for a publication.
+
+[Be sure to check out the issue tracker for possible useful contributions!](https://github.com/mastaal/parlhist/issues)
+
 ## Copyright and license
 
 Parlhist was for the most part written for personal study purposes:
@@ -100,3 +115,5 @@ Copyright (c) 2024-2025 Universiteit Leiden <m.a.staal [at] law.leidenuniv.nl>
 Regardless, the complete source code is available under the same license:
 
 Available under the European Union Public License v1.2 (EUPL-1.2), or, at your option, any later version.
+
+For other language versions of the EUPL - which are all equally valid - [please visit the website of the European Commission on the EUPL](https://interoperable-europe.ec.europa.eu/collection/eupl/eupl-text-eupl-12).
