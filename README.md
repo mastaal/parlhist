@@ -26,14 +26,14 @@ Django commands can be written to write automated experiments.
 ## Requirements
 
 * A database, preferably PostgreSQL. For small datasets and experiments, SQLite may suffice. But be aware that the software is only tested on PostgreSQL.
-* A machine to run `parlhist` on, preferably a (recent) Linux machine. The software might work on other operating systems.
+* A machine to run `parlhist` on, preferably a (recent) Linux machine. The software might work on other operating systems. On Windows, using Windows Subsystem for Linux (WSL) may be a good option.
 
 ## Usage
 
 ### Installation
 Clone the repository:
 ```
-$ git clone https://github.com/mastaal/uitspraken.git
+$ git clone https://github.com/mastaal/parlhist.git
 ```
 
 Create a Python environment and install all dependencies:
