@@ -47,7 +47,7 @@ def __get_ondertekendatum(xml: ET.Element) -> datetime.date:
 
 
 def __get_titel(xml: ET.Element) -> str:
-    """Get the dossiertitel from a parsed metadata xml"""
+    """Get the titel from a parsed metadata xml"""
 
     return xml.findall("metadata[@name='DC.title']")[0].get("content")
 

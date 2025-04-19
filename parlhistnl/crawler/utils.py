@@ -63,6 +63,7 @@ def __check_response_status_code(response: requests.Response) -> None:
         )
 
 
+# TODO: Would be nice to also pass custom parameters, cookies and timeout values
 def get_url_or_error(
     url: str, memoize=settings.PARLHIST_CRAWLER_DEFAULT_USE_MEMOIZATION
 ) -> requests.Response:

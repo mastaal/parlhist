@@ -11,6 +11,11 @@ Command:
 $ cat experiment-inwerkingtredingsbepalingen-task-{date}.json | jq '.[]["predictions"][]["result"][]["value"]["text"]' | sed -E 's/(\\t)+|(\\r\\n)+|\\n +/ /g' | sed -E 's/ +/ /g' | sort | uniq -c | sort -n > unieke_gevonden_inwerkingtredingsbepalingen.txt
 ```
 
+Or when working with the labeled data from label-studio:
+```
+$ cat inwerkingtredingsbepalingen-definitief-pretty.json | jq '.[]["annotations"][]["result"][]["value"]["text"]' | sed -E 's/(\\t)+|(\\r\\n)+|\\n +/ /g' | sed -E 's/ +/ /g' | sort | uniq -c | sort -n
+```
+
 Example output:
 
 ```
@@ -27,6 +32,11 @@ $ tail -n 5 unieke_gevonden_inwerkingtredingsbepalingen.txt
 Command:
 ```
 $ cat experiment-inwerkingtredingsbepalingen-task-{date}.json | jq '[.[] | { stbid: .["data"]["stb-id"] , pred: [.["predictions"][]["result"][]["value"] | {text: .text, label: .labels[0] }] }]' > gevonden_inwerkingtredingsbepalingen_met_id.json
+```
+
+Or when working with the labeled output from label-studio:
+```
+$ cat inwerkingtredingsbepalingen-definitief-pretty.json | jq '[.[] | { stbid: .["data"]["stb-id"] , annotation: [ .["annotations"][]["result"][]["value"] | {text: .text, label: .labels[0] }  ] } ]'
 ```
 
 Example output:
