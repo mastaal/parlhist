@@ -265,10 +265,14 @@ def find_inwerkingtredingskb_via_lido(
             "RDF XML request resulted in not-OK status code %s", rdfxml_response
         )
         raise CrawlerException
+    else:
+        logger.debug("Succesfully retrieved rdf data, parsing graph.")
 
     rdfgraph = Graph()
 
     rdfgraph.parse(rdfxml_response.content, format="xml")
+
+    logger.debug("RDF graph parsed, querying")
 
     # First, we find all the subjects that have the given stb-publication as a 'ontstaansbron'
     # and are of type Artikel
@@ -348,9 +352,10 @@ def find_inwerkingtredingskb_via_lido(
                         # This item is the form of: uri=OEP:stb-2024-197
                         inwerkingtredingsbron_stbid = item.split(":")[1]
                         logger.debug(
-                            "Identified %s as inwerkingtredingsbron for %s",
+                            "Identified %s as inwerkingtredingsbron for %s, with date %s",
                             inwerkingtredingsbron_stbid,
                             artikel,
+                            inwerkingtredingsdatum,
                         )
                         _, jaargang_str, nummer_str = inwerkingtredingsbron_stbid.split(
                             "-"
