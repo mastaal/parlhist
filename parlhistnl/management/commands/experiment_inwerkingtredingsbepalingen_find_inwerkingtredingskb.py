@@ -46,7 +46,7 @@ class Command(BaseCommand):
 
         enriched_dataset = []
 
-        for dataset_entry in dataset[0:100]:
+        for dataset_entry in dataset:
             stbid = dataset_entry["data"]["stb-id"]
             stb: Staatsblad = Staatsblad.objects.get_staatsblad_from_stbid(stbid)
             dataset_entry["data"]["is_slotwet"] = stb.is_slotwet
