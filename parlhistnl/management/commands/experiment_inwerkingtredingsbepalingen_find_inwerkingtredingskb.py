@@ -21,10 +21,7 @@ from typing import Any
 from django.core.management import BaseCommand
 
 from parlhistnl.models import Staatsblad
-from parlhistnl.utils.inwerkingtredingsbepalingen import (
-    find_inwerkingtredingskb_via_lido,
-    InwerkingtredingsbepalingType,
-)
+from parlhistnl.utils.inwerkingtredingsbepalingen import find_inwerkingtredingskb_via_lido
 
 logger = logging.getLogger(__name__)
 
@@ -47,32 +44,38 @@ class Command(BaseCommand):
         with open(options["data"], "rt") as datafile:
             dataset = json.load(datafile)
 
-        gedifferentieerde_inwerkingtredingsbepalingen = []
+        enriched_dataset = []
 
-        for dataset_entry in dataset:
+        for dataset_entry in dataset[0:100]:
             stbid = dataset_entry["data"]["stb-id"]
+            stb: Staatsblad = Staatsblad.objects.get_staatsblad_from_stbid(stbid)
+            dataset_entry["data"]["is_slotwet"] = stb.is_slotwet
+            dataset_entry["data"]["is_begrotingswet"] = stb.is_begrotingswet
+            dataset_entry["data"]["preferred_url"] = stb.preferred_url
+            dataset_entry["data"]["staatsblad_type"] = stb.staatsblad_type
+            dataset_entry["data"]["publicatiedatum"] = stb.publicatiedatum.strftime("%Y-%m-%d")
+            dataset_entry["data"]["ondertekendatum"] = stb.ondertekendatum.strftime("%Y-%m-%d")
+            dataset_entry["data"]["stb_metadata"] = stb.metadata_json
+            dataset_entry["data"]["titel"] = stb.titel
             logger.info("Processing %s", stbid)
             try:
                 inwerkingtredings_label = dataset_entry["annotations"][0]["result"][0]["value"]["labels"][0]
                 logger.info("Has inwerkingtredingsbepalingtype %s", inwerkingtredings_label)
 
-                if inwerkingtredings_label == InwerkingtredingsbepalingType.DELEGATIE_EN_DIFFERENTIATIE.value:
-                    logger.info("%s has delegatie and differentiatie", stbid)
-                    stb: Staatsblad = Staatsblad.objects.get_staatsblad_from_stbid(stbid)
-
-                    try:
-                        inwerkingtredingskbs, inwerkingtredingsdata, art_inw, _ = find_inwerkingtredingskb_via_lido(stb)
-                        logger.info("(%s) found: %s, %s", stbid, inwerkingtredingskbs, inwerkingtredingsdata)
-                        dataset_entry["data"]["inwerkingtredingsinformatie"] = {
-                            "inwerkingtredingskbs": [kb.stbid for kb in inwerkingtredingskbs],
-                            "inwerkingtredingsdata": [date.strftime("%Y-%m-%d") for date in inwerkingtredingsdata],
-                            "artikelen_inwerkingtredingsinformatie": art_inw
-                        }
-                        gedifferentieerde_inwerkingtredingsbepalingen.append(dataset_entry)
-                    except:
-                        logger.fatal("!!! WARNING !!! could not find inwerkingtredingsinformation for %s", stbid)
+                try:
+                    inwerkingtredingskbs, inwerkingtredingsdata, art_inw, _ = find_inwerkingtredingskb_via_lido(stb)
+                    logger.info("(%s) found: %s, %s", stbid, inwerkingtredingskbs, inwerkingtredingsdata)
+                    dataset_entry["data"]["inwerkingtredingsinformatie"] = {
+                        "inwerkingtredingskbs": [kb.stbid for kb in inwerkingtredingskbs],
+                        "inwerkingtredingsdata": [date.strftime("%Y-%m-%d") for date in inwerkingtredingsdata],
+                        "artikelen_inwerkingtredingsinformatie": art_inw
+                    }
+                except:
+                    logger.fatal("!!! WARNING !!! could not find inwerkingtredingsinformation for %s", stbid)
             except IndexError:
                 logger.info("No result in annotation for %s, assuming no inwerkingtredingsbepaling", stbid)
 
+            enriched_dataset.append(dataset_entry)
+
         with open(f"experiment-inwerkingtredingsmomenten-{datetime.datetime.now().strftime('%Y-%m-%d_%H%M')}.json", "wt", encoding="utf-8") as resultsfile:
-            json.dump(gedifferentieerde_inwerkingtredingsbepalingen, resultsfile)
+            json.dump(enriched_dataset, resultsfile)
