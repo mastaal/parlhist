@@ -4,21 +4,35 @@ services:
     image: localhost/parlhist:latest
     ports:
       - "8000:8000"
-    # depends_on:
-    #   - db
+    depends_on:
+      - db
     volumes:
       - parlhist-data:/data
     environment:
-      PARLHIST_DATABASE: "sqlite3"
+      PARLHIST_DJANGO_SECRET_KEY: ${PARLHIST_DJANGO_SECRET_KEY}
+      PARLHIST_DEBUG: ${PARLHIST_DEBUG}
+      PARLHIST_DJANGO_ALLOWED_HOSTS: ${PARLHIST_DJANGO_ALLOWED_HOSTS}
+      PARLHIST_DATABASE: ${PARLHIST_DATABASE}
+      PARLHIST_DJANGO_LOG_LEVEL: ${PARLHIST_DJANGO_LOG_LEVEL}
       PARLHIST_MEMOIZED_REQUESTS_PATH: "/data/memoized-requests"
       PARLHIST_ENABLE_MEMOIZATION: "True"
-  # db:
-  #   image: postgres:latest
-  #   restart: always
-  #   environment:
-  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-  #     POSTGRES_DB: ${POSTGRES_DATABASE}
-  #     POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DATABASE}
+      POSTGRES_USER: ${POSTGRES_USER}
+    env_file:
+      - .env
+  db:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DATABASE}
+      POSTGRES_USER: ${POSTGRES_USER}
+    volumes:
+      - parlhist-db:/var/lib/postgresql/data
+    env_file:
+      - .env
 
 volumes:
   parlhist-data:
+  parlhist-db:
