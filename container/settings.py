@@ -45,7 +45,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django_rq'
 ]
 
 MIDDLEWARE = [
@@ -82,16 +81,27 @@ WSGI_APPLICATION = 'parlhist.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": getenv("POSTGRES_DATABASE"),
-        "USER": getenv("POSTGRES_USER"),
-        "PASSWORD": getenv("POSTGRES_PASSWORD"),
-        "HOST": getenv("POSTGRES_HOST", "db"),
-        "PORT": getenv("POSTGRES_PORT", "5432"),
+__database_type = getenv("PARLHIST_DATABASE", "sqlite3")
+
+if __database_type == "postgres":
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": getenv("POSTGRES_DATABASE"),
+            "USER": getenv("POSTGRES_USER"),
+            "PASSWORD": getenv("POSTGRES_PASSWORD"),
+            "HOST": getenv("POSTGRES_HOST", "db"),
+            "PORT": getenv("POSTGRES_PORT", "5432"),
+        }
     }
-}
+else:
+    # Assume sqlite
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": "/data/parlhist.db"
+        }
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -155,14 +165,14 @@ LOGGING = {
         'file': {
             'class': 'logging.FileHandler',
             'formatter': 'verbose',
-            'filename': 'parlhist.log'
+            'filename': '/data/parlhist.log'
         }
     },
     'root': {
-        'handlers': ['console', 'file'],
+        'handlers': ['console', "file"],
         'level': 'DEBUG',
     },
 }
 
-PARLHIST_CRAWLER_MEMOIZE_PATH = "./memoized-requests"
-PARLHIST_CRAWLER_DEFAULT_USE_MEMOIZATION = True
+PARLHIST_CRAWLER_MEMOIZE_PATH = getenv("PARLHIST_MEMOIZED_REQUESTS_PATH", "/data/memoized-requests")
+PARLHIST_CRAWLER_DEFAULT_USE_MEMOIZATION = bool(getenv("PARLHIST_ENABLE_MEMOIZATION", True))
