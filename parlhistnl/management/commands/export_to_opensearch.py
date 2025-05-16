@@ -19,7 +19,7 @@ from django.core.management import BaseCommand
 from django.core.management.base import CommandParser
 from opensearchpy import OpenSearch, helpers
 
-from parlhistnl.models import Staatsblad
+from parlhistnl.models import Staatsblad, Kamerstuk, KamerstukDossier
 
 logger = logging.getLogger(__name__)
 
@@ -29,12 +29,31 @@ class Command(BaseCommand):
 
     help = "Export parlhist data to an OpenSearch instance"
 
+    def __create_os_index_if_not_exists(self, os_client, index_name: str) -> bool:
+        """
+        Create a new index in OpenSearch if it does not already exists.
+
+        Returns True if a new index has been created.
+        """
+        if not os_client.indices.exists(index_name):
+            logger.info(
+                "Index %s does not already exist, creating new index...", index_name
+            )
+            create_response = os_client.indices.create(index_name)
+            # The response for this API endpoint is currently (OS v.3.0) not documented, so just hope
+            # that this worked! https://docs.opensearch.org/docs/3.0/api-reference/index-apis/create-index/
+            logger.debug(create_response)
+            return True
+        else:
+            logger.debug("Index %s already exists", index_name)
+            return False
+
     def add_arguments(self, parser: CommandParser) -> None:
         """Add arguments"""
         parser.add_argument(
             "model",
             type=str,
-            choices=["Staatsblad"],
+            choices=["Staatsblad", "Kamerstuk"],
             help="Choose which model you want to export to OpenSearch",
         )
 
@@ -54,22 +73,10 @@ class Command(BaseCommand):
             f"Welcome to {client_info['version']['distribution']} {client_info['version']['number']}!"
         )
 
-        # We need to create a new index if it doesn't already exist
-        if not os_client.indices.exists(index_name):
-            logger.info(
-                "Index %s does not already exist, creating new index...", index_name
-            )
-            create_response = os_client.indices.create(index_name)
-            # The response for this API endpoint is currently (OS v.3.0) not documented, so just hope
-            # that this worked! https://docs.opensearch.org/docs/3.0/api-reference/index-apis/create-index/
-            logger.debug(create_response)
-        else:
-            logger.debug("Index %s already exists", index_name)
-
         if options["model"] == "Staatsblad":
-            staatsbladen = Staatsblad.objects.exclude(
-                staatsblad_type=Staatsblad.StaatsbladType.VERBETERBLAD
-            )
+            self.__create_os_index_if_not_exists(os_client, index_name)
+
+            staatsbladen = Staatsblad.objects.all()
 
             staatsbladen_serialized = json.loads(
                 serializers.serialize("json", staatsbladen)
@@ -85,6 +92,27 @@ class Command(BaseCommand):
                 staatsbladen_os.append(stb_os)
 
             helpers.bulk(os_client, staatsbladen_os, max_retries=3)
+        elif options["model"] == "Kamerstuk":
+            self.__create_os_index_if_not_exists(os_client, index_name)
+
+            kamerstukken = Kamerstuk.objects.all()
+
+            kamerstukken_serialized = json.loads(
+                serializers.serialize("json", kamerstukken)
+            )
+
+            kamerstukken_os = []
+            for kst in kamerstukken_serialized:
+                kst_os = kst["fields"]
+                hoofddossier = KamerstukDossier.objects.get(id=kst["fields"]["hoofddossier"])
+                del kst_os["hoofddossier"]
+                kst_os["hoofddossier_nummer"] = hoofddossier.dossiernummer
+                kst_os["hoofddossier_titel"] = hoofddossier.dossiertitel
+                kst_os["_index"] = index_name
+                kst_os["_id"] = f"kst-{hoofddossier.dossiernummer}-{kst_os['ondernummer']}"
+                kamerstukken_os.append(kst_os)
+
+            helpers.bulk(os_client, kamerstukken_os, max_retries=3)
         else:
             logger.error("No valid / known model to export specified")
             self.stderr.write(
