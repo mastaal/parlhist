@@ -59,6 +59,13 @@ class Command(BaseCommand):
 
     def handle(self, *args: Any, **options: Any) -> str | None:
 
+        if not settings.PARLHIST_OPENSEARCH_ENABLED:
+            self.stderr.write(
+                self.style.ERROR("OpenSearch is not enabled.")
+            )
+
+            return
+
         index_name = f"parlhist-{options['model']}".lower()
 
         os_client = OpenSearch(
