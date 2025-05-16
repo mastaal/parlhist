@@ -1,9 +1,12 @@
 """
     parlhist/parlhist/settings.py
 
-    Copyright 2023, 2024 Martijn Staal <parlhist [at] martijn-staal.nl>
+    Copyright 2023-2025 Martijn Staal <parlhist [at] martijn-staal.nl>
+    Copyright 2025 Universiteit Leiden <m.a.staal [at] law.leidenuniv.nl>
 
     Available under the EUPL-1.2, or, at your option, any later version.
+
+    SPDX-License-Identifier: EUPL-1.2
 
     Django settings for parlhist project.
 
@@ -17,6 +20,7 @@
 """
 
 from pathlib import Path
+from os import getenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -200,3 +204,9 @@ RQ_QUEUES = {
 
 PARLHIST_CRAWLER_MEMOIZE_PATH = "./memoized-requests"
 PARLHIST_CRAWLER_DEFAULT_USE_MEMOIZATION = True
+PARLHIST_OPENSEARCH_ENABLED = True
+PARLHIST_OPENSEARCH_HTTP_AUTH_USER = getenv("PARLHIST_OPENSEARCH_HTTP_AUTH_USER", "admin")
+PARLHIST_OPENSEARCH_HTTP_AUTH_PASSWORD = getenv("PARLHIST_OPENSEARCH_HTTP_AUTH_PASSWORD", "changeme")
+PARLHIST_OPENSEARCH_HTTP_AUTH = (PARLHIST_OPENSEARCH_HTTP_AUTH_USER, PARLHIST_OPENSEARCH_HTTP_AUTH_PASSWORD)
+PARLHIST_OPENSEARCH_HOSTS = [{"host": "localhost", "port": 9200}]
+PARLHIST_OPENSEARCH_VERIFY_CERTS = False
