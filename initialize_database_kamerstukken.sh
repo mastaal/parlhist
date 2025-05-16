@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# SPDX-FileCopyrightText: 2025 Martijn Staal <parlhist [at] martijn-staal.nl>
+#
+# SPDX-License-Identifier: EUPL-1.2
+
 ./manage.py kamerstukken_crawl_year 1995
 ./manage.py kamerstukken_crawl_year 1996
 ./manage.py kamerstukken_crawl_year 1997

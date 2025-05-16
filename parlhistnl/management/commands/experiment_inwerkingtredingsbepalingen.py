@@ -5,11 +5,10 @@
     Simple regex-based recognition of inwerkingtredingsbepalingen in the Staatsblad.
     Outputs to a Label Studio JSON file with predicted labels.
 
-    Copyright 2025 Martijn Staal <parlhist [at] martijn-staal.nl>
-
     Available under the EUPL-1.2, or, at your option, any later version.
 
     SPDX-License-Identifier: EUPL-1.2
+    SPDX-FileCopyrightText: Copyright 2025 Martijn Staal <parlhist [at] martijn-staal.nl>
 """
 
 import datetime

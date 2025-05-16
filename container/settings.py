@@ -1,7 +1,10 @@
 """
     parlhist/parlhist/settings.py
 
-    Copyright 2023, 2024 Martijn Staal <parlhist [at] martijn-staal.nl>
+    SPDX-FileCopyrightText: 2023-2025 Martijn Staal <parlhist [at] martijn-staal.nl>
+    SPDX-FileCopyrightText: 2025 Universiteit Leiden <m.a.staal [at] law.leidenuniv.nl>
+
+    SPDX-License-Identifier: EUPL-1.2
 
     Available under the EUPL-1.2, or, at your option, any later version.
 

@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# SPDX-FileCopyrightText: 2024 Universiteit Leiden <m.a.staal [at] law.leidenuniv.nl>
+#
+# SPDX-License-Identifier: EUPL-1.2
+
 source ./venv/bin/activate
 ./manage.py migrate
 

@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# SPDX-FileCopyrightText: 2025 Martijn Staal <parlhist [at] martijn-staal.nl>
+#
+# SPDX-License-Identifier: EUPL-1.2
+
 ./manage.py staatsblad_crawl_year 2024 --update
 ./manage.py staatsblad_crawl_year 2023 --update
 ./manage.py staatsblad_crawl_year 2022 --update

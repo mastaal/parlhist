@@ -1,14 +1,12 @@
 """
-parlhist/parlhistnl/management/commands/export_to_opensearch.py
+    parlhist/parlhistnl/management/commands/export_to_opensearch.py
 
-Export parlhist data to an OpenSearch instance
+    Export parlhist data to an OpenSearch instance
 
-Copyright 2025 Universiteit Leiden <m.a.staal [at] law.leidenuniv.nl>
+    Available under the EUPL-1.2, or, at your option, any later version.
 
-Available under the EUPL-1.2, or, at your option, any later version.
-
-SPDX-File-CopyrightText: 2025 Universiteit Leiden <m.a.staal [at] law.leidenuniv.nl>
-SPDX-License-Identifier: EUPL-1.2
+    SPDX-FileCopyrightText: 2025 Universiteit Leiden <m.a.staal [at] law.leidenuniv.nl>
+    SPDX-License-Identifier: EUPL-1.2
 """
 
 import json

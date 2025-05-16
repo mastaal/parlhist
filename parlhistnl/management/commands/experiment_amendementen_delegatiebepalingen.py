@@ -4,10 +4,9 @@
     Regex-based experiment to identify amendments similar to Kamerstukken II 2023/24, 36.496, nr. 54
     (https://zoek.officielebekendmakingen.nl/kst-36496-54.html)
 
-    Copyright (c) 2024, 2025 Universiteit Leiden <m.a.staal [at] law.leidenuniv.nl>
-
     Available under the EUPL-1.2, or, at your option, any later version.
 
+    SPDX-FileCopyrightText: 2024-2025 Universiteit Leiden <m.a.staal [at] law.leidenuniv.nl>
     SPDX-License-Identifier: EUPL-1.2
 """
 

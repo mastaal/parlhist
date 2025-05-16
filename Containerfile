@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: EUPL-1.2
+# SPDX-FileCopyrightText: 2025 Universiteit Leiden <m.a.staal [at] law.leidenuniv.nl>
+
 # Based on the example from: https://www.docker.com/blog/how-to-dockerize-django-app/
 FROM python:3.12-bookworm AS builder
 
