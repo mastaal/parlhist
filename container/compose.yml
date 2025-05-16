@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: EUPL-1.2
 # SPDX-FileCopyrightText: 2025 Universiteit Leiden <m.a.staal [at] law.leidenuniv.nl>
 
-version: '3'
+name: parlhist
 services:
   parlhist:
     image: localhost/parlhist:latest

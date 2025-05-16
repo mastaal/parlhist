@@ -166,42 +166,6 @@ LOGGING = {
     },
 }
 
-# Redis and rq
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        }
-    }
-}
-
-RQ_QUEUES = {
-    'default': {
-        'USE_REDIS_CACHE': 'default',
-        'DEFAULT_TIMEOUT': '600',
-    },
-    'high': {
-        'USE_REDIS_CACHE': 'default',
-    },
-    'low': {
-        'USE_REDIS_CACHE': 'default',
-    },
-    'network': {
-        'USE_REDIS_CACHE': 'default',
-        'DEFAULT_TIMEOUT': '600',
-    },
-    'parse': {
-        'USE_REDIS_CACHE': 'default',
-        'DEFAULT_TIMEOUT': '600',
-    },
-    'kamerstukken': {
-        'USE_REDIS_CACHE': 'default',
-        'DEFAULT_TIMEOUT': '600',
-    }
-}
-
 PARLHIST_CRAWLER_MEMOIZE_PATH = "./memoized-requests"
 PARLHIST_CRAWLER_DEFAULT_USE_MEMOIZATION = True
 PARLHIST_OPENSEARCH_ENABLED = True
