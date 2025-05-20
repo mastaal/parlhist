@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    {% block head %}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'parlhistnl/stylesheet.css' %}">
+    <title>{% block title %}parlhist{% endblock %}</title>
+    {% block script %}{% endblock %}
+    {% block extracss %} {% endblock %}
+    {% endblock %}
+    <meta property="og:title" content="{% block og_title %}parlhist{% endblock %}" />
+</head>
+<body>
+    <a href="/"><h1 id="sitetitle">parlhist</h1></a>
+
+    <nav>
+        <a href="/">Hoofdpagina</a>
+    </nav>
+
+    <div id="content">
+    {% block content %}
+    {% endblock %}
+    </div>
+
+    <div id="footer">
+    {% block footer %}
+    <small>
+        Beschikbaar onder de voorwaarden van de EUPL-1.2.
+        <br>
+        Copyright 2023-2025 Martijn Staal
+        <br>
+        Copyright 2024-2025 Universiteit Leiden
+    </small>
+    {% endblock %}
+    </div>
+</body>
+</html>

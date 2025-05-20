@@ -1,0 +1,22 @@
+{% extends "parlhistnl/base.html" %}
+
+{% block content %}
+
+<p>
+    Welkom op de beheerderspagina van parlhist.
+</p>
+
+<h2>Statusinformatie</h2>
+{% for text, count in status_information %}
+<p>{{ text }}: {{ count }}</p>
+{% endfor %}
+
+<h2>Start Staatsblad crawler</h2>
+<form action="/" method="post">
+    {% csrf_token %}
+    {{ form }}
+    <br>
+    <input type="submit" value="Start crawler">
+</form>
+
+{% endblock %}
