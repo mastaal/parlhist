@@ -12,6 +12,7 @@
     SPDX-FileCopyrightText: 2024-2025 Universiteit Leiden <m.a.staal [at] law.leidenuniv.nl>
 """
 
+import datetime
 import logging
 from typing import Any
 
@@ -30,11 +31,14 @@ class Command(BaseCommand):
     help = "Crawl all Kamerstukken in a calendar year (e.g., 2020-01-01 through 2020-12-31)."
 
     def add_arguments(self, parser: CommandParser) -> None:
+
+        current_year = datetime.date.today().year
+
         """Add arguments"""
         parser.add_argument(
             "year",
             type=int,
-            choices=list(range(1995, 2026)),
+            choices=list(range(1995, current_year + 1)),
             default=2020,
             help="Which calendar year to crawl the kamerstukken of",
         )
@@ -43,6 +47,7 @@ class Command(BaseCommand):
             action="store_true",
             help="Update Kamerstukken already in the database",
         )
+        parser.add_argument("--queue-tasks", action="store_true", help="Queue tasks using Celery")
 
     def handle(self, *args: Any, **options: Any) -> str | None:
         """Crawl one Vergadering and all its subitems"""
@@ -52,7 +57,7 @@ class Command(BaseCommand):
         koop_sru_query = f"(c.product-area==officielepublicaties AND dt.type=Kamerstuk AND dt.date >={year}-01-01 AND dt.date <= {year}-12-31)"
 
         kamerstukken: list[Kamerstuk] = crawl_all_kamerstukken_within_koop_sru_query(
-            koop_sru_query, update=options["update"]
+            koop_sru_query, update=options["update"], queue_tasks=options["queue_tasks"]
         )
 
         logger.info(

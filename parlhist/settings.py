@@ -169,6 +169,7 @@ LOGGING = {
 CELERY_BROKER_URL = "amqp://"
 CELERY_RESULT_BACKEND = "rpc://"
 CELERY_IMPORTS = [
+    "parlhistnl.crawler.kamerstuk",
     "parlhistnl.crawler.staatsblad"
 ]
 
