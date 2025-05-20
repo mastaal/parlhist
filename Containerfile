@@ -29,10 +29,6 @@ LABEL org.opencontainers.image.source="https://github.com/mastaal/parlhist"
 LABEL org.opencontainers.image.base.name="parlhist"
 LABEL org.opencontainers.image.title="parlhist"
 
-WORKDIR /app
-COPY --chown=parlhist:parlhist . /app/
-COPY ./container/settings.py ./parlhist/settings.py
-
 # Set environment variables to optimize Python
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -40,6 +36,11 @@ ENV PYTHONUNBUFFERED=1
 RUN mkdir /data && chown 1000 /data
 VOLUME [ "/data" ]
 
+WORKDIR /app
+COPY --chown=parlhist:parlhist . /app/
+COPY ./container/settings.py ./parlhist/settings.py
+COPY ./container/init.sh ./init.sh
+
 EXPOSE 8000
 USER parlhist
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "parlhist.wsgi:application"]
+CMD ["./init.sh"]
