@@ -371,3 +371,13 @@ def crawl_all_staatsblad_publicaties_within_koop_sru_query(
             )
 
     return results
+
+
+def crawl_all_staatsblad_publicaties_in_year(
+    year: int, update=False, queue_tasks=False
+) -> list[Staatsblad] | list[AsyncResult]:
+    return crawl_all_staatsblad_publicaties_within_koop_sru_query(
+        f"(w.publicatienaam=Staatsblad AND dt.date >= {year}-01-01 AND dt.date <= {year}-12-31)",
+        update=update,
+        queue_tasks=queue_tasks,
+    )
