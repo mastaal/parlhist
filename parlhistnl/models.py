@@ -208,6 +208,7 @@ class Staatsblad(models.Model):
 
     jaargang = models.IntegerField()
     nummer = models.IntegerField()
+    versienummer = models.CharField(max_length=16, default="")
 
     behandelde_dossiers = models.ManyToManyField(KamerstukDossier)
 
@@ -254,7 +255,9 @@ class Staatsblad(models.Model):
         verbose_name_plural = "Staatsbladen"
 
     def __str__(self) -> str:
-        return f"Staatsblad {self.jaargang}-{self.nummer} {self.staatsblad_type}: {self.titel} ({self.publicatiedatum})"
+        if self.versienummer == "":
+            return f"Staatsblad {self.jaargang}-{self.nummer} {self.staatsblad_type}: {self.titel} ({self.publicatiedatum})"
+        return f"Staatsblad {self.jaargang}-{self.nummer}-{self.versienummer} {self.staatsblad_type}: {self.titel} ({self.publicatiedatum})"
 
     def __title_based_staatsblad_property_check_all(
         self, check_strings: list[str]
@@ -341,7 +344,10 @@ class Staatsblad(models.Model):
     @property
     def stbid(self) -> str:
         """Returns the stb-id in the form: stb-{jaargang}-{nummer}"""
-        return f"stb-{self.jaargang}-{self.nummer}"
+        if self.versienummer == "":
+            return f"stb-{self.jaargang}-{self.nummer}"
+
+        return f"stb-{self.jaargang}-{self.nummer}-{self.versienummer}"
 
     def get_articles_list(self, include_article_names=False) -> list[str]:
         """Returns a list with the text of all seperate articles as found using the raw html"""
