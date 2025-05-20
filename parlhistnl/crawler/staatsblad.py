@@ -16,7 +16,7 @@ from bs4 import BeautifulSoup
 from celery import shared_task
 from celery.result import AsyncResult
 
-from parlhistnl.models import KamerstukDossier, Staatsblad
+from parlhistnl.models import Staatsblad
 from parlhistnl.crawler.utils import (
     CrawlerException,
     get_url_or_error,
@@ -55,32 +55,35 @@ def __get_titel(xml: ET.Element) -> str:
 
 
 def __get_staatsblad_type(xml: ET.Element, titel: str) -> Staatsblad.StaatsbladType:
-    """Get the staatsbladtype"""
+    """Get the StaatsbladType"""
 
-    xmltype = xml.findall("metadata[@name='DC.type'][@scheme='OVERHEIDop.Staatsblad']")[
-        0
-    ].get("content")
+    xml_type = xml.findall(
+        "metadata[@name='DC.type'][@scheme='OVERHEIDop.Staatsblad']"
+    )[0].get("content")
 
-    if xmltype == "Wet":
+    if xml_type == "Wet":
         return Staatsblad.StaatsbladType.WET
 
-    if xmltype == "Rijkswet":
+    if xml_type == "Rijkswet":
         return Staatsblad.StaatsbladType.RIJKSWET
 
-    if xmltype == "AMvB":
+    if xml_type == "AMvB":
         return Staatsblad.StaatsbladType.AMVB
 
-    if xmltype == "RijksAMvB":
+    if xml_type == "RijksAMvB":
         return Staatsblad.StaatsbladType.RIJKSAMVB
 
-    if xmltype == "Verbeterblad":
+    if xml_type == "Verbeterblad":
         return Staatsblad.StaatsbladType.VERBETERBLAD
 
     # TODO: Further disambiguate between possible KKB's so that direct filtering on inwerkingtreding-KB's is possible
-    if xmltype == "Klein Koninklijk Besluit":
+    if xml_type == "Klein Koninklijk Besluit":
         return Staatsblad.StaatsbladType.KKB
 
-    if xmltype == "Beschikking" and "plaatsing in het Staatsblad van de tekst" in titel:
+    if (
+        xml_type == "Beschikking"
+        and "plaatsing in het Staatsblad van de tekst" in titel
+    ):
         return Staatsblad.StaatsbladType.INTEGRALE_TEKSTPLAATSING
 
     return Staatsblad.StaatsbladType.ONBEKEND
@@ -112,7 +115,9 @@ def crawl_staatsblad(
     xml_url = html_url.replace(".html", ".xml")
 
     try:
-        existing_stb = Staatsblad.objects.get(jaargang=jaargang, nummer=nummer, versienummer=versienummer)
+        existing_stb = Staatsblad.objects.get(
+            jaargang=jaargang, nummer=nummer, versienummer=versienummer
+        )
         logger.info("Staatsblad already exists")
         if not update:
             logger.info("Update set to false, returning existing Staatsblad")
@@ -186,7 +191,9 @@ def crawl_staatsblad(
     try:
         staatsblad_type = __get_staatsblad_type(metadata_xml, titel)
     except IndexError:
-        logger.error("Could not succesfully Staatsbladtype for %s %s", jaargang, nummer)
+        logger.error(
+            "Could not successfully detect StaatsbladType for %s %s", jaargang, nummer
+        )
         staatsblad_type = Staatsblad.StaatsbladType.ONBEKEND
 
     # Actually parse the behandelde_dossiers (OVERHEIDop.behandeldDossier)
@@ -201,17 +208,19 @@ def crawl_staatsblad(
     # TODO: Make specific function for extracting this inner html
     soup = BeautifulSoup(text_response.text, "html.parser")
 
-    elems = soup.select("article div#broodtekst.stuk.broodtekst-container")
+    inner_text_elements = soup.select(
+        "article div#broodtekst.stuk.broodtekst-container"
+    )
 
-    if len(elems) > 1:
+    if len(inner_text_elements) > 1:
         logger.warning(
             "While extracting the inner html text, multiple matches were found where only one was expected %s",
             html_url,
         )
 
-    inner_html = str(elems[0])
+    inner_html = str(inner_text_elements[0])
 
-    tekst = elems[0].get_text()
+    tekst = inner_text_elements[0].get_text()
 
     if update and existing_stb is not None:
         existing_stb.jaargang = jaargang
