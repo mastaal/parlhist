@@ -36,6 +36,9 @@ services:
       - parlhist-db:/var/lib/postgresql/data
     env_file:
       - .env
+  rabbitmq:
+    image: rabbitmq:latest
+    restart: always
 
 volumes:
   parlhist-data:

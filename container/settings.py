@@ -177,6 +177,12 @@ LOGGING = {
     },
 }
 
+CELERY_BROKER_URL = getenv("CELERY_BROKER_URL", "amqp://rabbitmq")
+CELERY_RESULT_BACKEND = getenv("CELERY_RESULT_BACKEND", "rpc://rabbitmq")
+CELERY_IMPORTS = [
+    "parlhistnl.crawler.staatsblad"
+]
+
 PARLHIST_CRAWLER_MEMOIZE_PATH = getenv("PARLHIST_MEMOIZED_REQUESTS_PATH", "/data/memoized-requests")
 PARLHIST_CRAWLER_DEFAULT_USE_MEMOIZATION = getenv("PARLHIST_ENABLE_MEMOIZATION", "False") == "True"
 

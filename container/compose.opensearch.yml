@@ -38,6 +38,9 @@ services:
       - parlhist-db:/var/lib/postgresql/data
     env_file:
       - .env
+  rabbitmq:
+    image: rabbitmq:latest
+    restart: always
 
 # OpenSearch based on: https://docs.opensearch.org/docs/latest/install-and-configure/install-opensearch/docker/
   opensearch-node1: # This is also the hostname of the container within the Docker network (i.e. https://opensearch-node1/)
