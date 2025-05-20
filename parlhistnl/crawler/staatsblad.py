@@ -5,6 +5,7 @@
 
     SPDX-License-Identifier: EUPL-1.2
     SPDX-FileCopyrightText: 2024-2025 Martijn Staal <parlhist [at] martijn-staal.nl>
+    SPDX-FileCopyrightText: 2025 Universiteit Leiden <m.a.staal [at] law.leidenuniv.nl>
 """
 
 import datetime
@@ -244,12 +245,29 @@ def crawl_all_staatsblad_publicaties_within_koop_sru_query(
     for record in records:
         try:
             logger.debug("Crawling %s", record)
-            jaargang_record = record.find(
+            jaargang_record_xml = record.find(
                 ".//overheidwetgeving:jaargang", XML_NAMESPACES
-            ).text
-            nummer_record = record.find(
+            )
+            if jaargang_record_xml is None:
+                raise CrawlerException(f"Could not find jaargang record in {record}")
+            jaargang_record = jaargang_record_xml.text
+            if jaargang_record is None or jaargang_record == "":
+                raise CrawlerException(f"Jaargang record has no text in {record}")
+
+            try:
+                jaargang_record = int(jaargang_record)
+            except ValueError as exc:
+                raise CrawlerException(f"Jaargang record could not be converted to int {jaargang_record}, {record}") from exc
+
+            nummer_record_xml = record.find(
                 ".//overheidwetgeving:publicatienummer", XML_NAMESPACES
-            ).text
+            )
+            if nummer_record_xml is None:
+                raise CrawlerException(f"Could not find nummer record in {record}")
+            nummer_record = nummer_record_xml.text
+            if nummer_record is None or nummer_record == "":
+                raise CrawlerException(f"Nummer record has no text in {record}")
+
             logger.debug("Found jaargang %s, nummer %s", jaargang_record, nummer_record)
 
             try:
