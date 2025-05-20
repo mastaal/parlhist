@@ -7,6 +7,7 @@
 
     SPDX-License-Identifier: EUPL-1.2
     SPDX-FileCopyrightText: 2025 Martijn Staal <parlhist [at] martijn-staal.nl>
+    SPDX-FileCopyrightText: 2025 Universiteit Leiden <m.a.staal [at] law.leidenuniv.nl>
 """
 
 import logging
@@ -32,6 +33,7 @@ class Command(BaseCommand):
         parser.add_argument("jaargang", type=int)
 
         parser.add_argument("--update", action="store_true", help="Update")
+        parser.add_argument("--queue-tasks", action="store_true", help="Queue tasks using Celery")
 
     def handle(self, *args: Any, **options: Any) -> str | None:
         year = options["jaargang"]
@@ -40,6 +42,7 @@ class Command(BaseCommand):
         stbs = crawl_all_staatsblad_publicaties_within_koop_sru_query(
             f"(w.publicatienaam=Staatsblad AND dt.date >= {year}-01-01 AND dt.date <= {year}-12-31)",
             update=options["update"],
+            queue_tasks=options["queue_tasks"]
         )
 
         self.stdout.write(self.style.SUCCESS(f"Crawled {stbs}"))

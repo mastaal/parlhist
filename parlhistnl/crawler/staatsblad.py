@@ -13,6 +13,8 @@ import logging
 import xml.etree.ElementTree as ET
 
 from bs4 import BeautifulSoup
+from celery import shared_task
+from celery.result import AsyncResult
 
 from parlhistnl.models import KamerstukDossier, Staatsblad
 from parlhistnl.crawler.utils import (
@@ -225,10 +227,18 @@ def crawl_staatsblad(
 
     return stb
 
+@shared_task
+def crawl_staatsblad_task(
+    jaargang: int, nummer: str, update=False, preferred_url=None
+) -> int:
+    """Wrapper function for crawl_staatsblad as a celery tasks that returns just the id of the staatsblad in the database"""
+    stb = crawl_staatsblad(jaargang, nummer, update=update, preferred_url=preferred_url)
+    return stb.id
+
 
 def crawl_all_staatsblad_publicaties_within_koop_sru_query(
-    query: str, update=False
-) -> list[Staatsblad]:
+    query: str, update=False, queue_tasks=False
+) -> list[Staatsblad] | list[AsyncResult]:
     """
     Crawl all Staatsbladen which can be found by the given KOOP SRU query
 
@@ -239,7 +249,7 @@ def crawl_all_staatsblad_publicaties_within_koop_sru_query(
     Note: Only tested for dt.type=Wet queries.
     """
 
-    results: list[Staatsblad] = []
+    results: list[Staatsblad] | list[AsyncResult] = []
     records = koop_sru_api_request_all(query)
 
     for record in records:
@@ -282,13 +292,17 @@ def crawl_all_staatsblad_publicaties_within_koop_sru_query(
                 )
                 preferred_url = None
 
-            stb = crawl_staatsblad(
-                jaargang_record,
-                nummer_record,
-                update=update,
-                preferred_url=preferred_url,
-            )
-            results.append(stb)
+            if queue_tasks:
+                async_stb = crawl_staatsblad_task.delay(jaargang_record, nummer_record, update=update, preferred_url=preferred_url)
+                results.append(async_stb)
+            else:
+                stb = crawl_staatsblad(
+                    jaargang_record,
+                    nummer_record,
+                    update=update,
+                    preferred_url=preferred_url,
+                )
+                results.append(stb)
         except CrawlerException:
             logger.error("Failed to crawl stb-%s-%s", jaargang_record, nummer_record)
         except Exception as exc:
