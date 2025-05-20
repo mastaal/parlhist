@@ -166,6 +166,12 @@ LOGGING = {
     },
 }
 
+CELERY_BROKER_URL = "amqp://"
+CELERY_RESULT_BACKEND = "rpc://"
+CELERY_IMPORTS = [
+    "parlhistnl.crawler.staatsblad"
+]
+
 PARLHIST_CRAWLER_MEMOIZE_PATH = "./memoized-requests"
 PARLHIST_CRAWLER_DEFAULT_USE_MEMOIZATION = True
 PARLHIST_OPENSEARCH_ENABLED = True

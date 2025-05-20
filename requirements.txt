@@ -18,3 +18,5 @@ numpy>=1.26.4
 rdflib>=7.1.4
 
 opensearch-py>=2.8.0
+
+celery>=5.5.2

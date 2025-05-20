@@ -1,6 +1,7 @@
 """
-    parlhist/parlhist/__init__.py
+    parlhist/parlhist/celery.py
 
+    Celery configuration
     Based on: https://docs.celeryq.dev/en/stable/django/first-steps-with-django.html
 
     Available under the EUPL-1.2, or, at your option, any later version.
@@ -9,6 +10,14 @@
     SPDX-License-Identifier: EUPL-1.2
 """
 
-from .celery import app as celery_app
+import os
 
-__all__ = ("celery_app",)
+from celery import Celery
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "parlhist.settings")
+
+app = Celery("parlhist")
+
+app.config_from_object("django.conf:settings", namespace="CELERY")
+
+app.autodiscover_tasks()
