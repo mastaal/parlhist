@@ -443,10 +443,10 @@ def update_kamerstuktype(kst: Kamerstuk) -> None:
 
 def crawl_all_kamerstukken_within_koop_sru_query(
     query: str, update=False, queue_tasks=False
-) -> list[Kamerstuk]:
+) -> list[Kamerstuk] | list[AsyncResult]:
     """ "Crawl all Kamerstukken which can be found by the given KOOP SRU query"""
 
-    results: list[Kamerstuk] = []
+    results: list[Kamerstuk] | list[AsyncResult] = []
     records = koop_sru_api_request_all(query)
 
     for record in records:
