@@ -173,6 +173,10 @@ CELERY_IMPORTS = [
     "parlhistnl.crawler.kamerstuk",
     "parlhistnl.crawler.staatsblad"
 ]
+# This rate limit is recommended when crawling new pages from the KOOP API.
+# If you're rebuilding your database from the memoized requests, you can
+# opt for a higher rate limit.
+CELERY_TASK_DEFAULT_RATE_LIMIT = "60/m"
 
 PARLHIST_CRAWLER_MEMOIZE_PATH = "./memoized-requests"
 PARLHIST_CRAWLER_DEFAULT_USE_MEMOIZATION = True
