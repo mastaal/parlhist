@@ -376,6 +376,15 @@ def crawl_all_staatsblad_publicaties_within_koop_sru_query(
 def crawl_all_staatsblad_publicaties_in_year(
     year: int, update=False, queue_tasks=False
 ) -> list[Staatsblad] | list[AsyncResult]:
+    """
+    Crawl all the Staatsblad publicaties with their publicatiedatum within the range of year-01-01 and year-12-31 (inclusive).
+
+    year: any value between 1995 and the current year (inclusive)
+    """
+    current_year = datetime.date.today().year
+    if year not in range(1995, current_year + 1):
+        raise CrawlerException("Received invalid year %s", year)
+
     return crawl_all_staatsblad_publicaties_within_koop_sru_query(
         f"(w.publicatienaam=Staatsblad AND dt.date >= {year}-01-01 AND dt.date <= {year}-12-31)",
         update=update,
