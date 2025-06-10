@@ -1,12 +1,12 @@
 """
-    parlhist/parlhistnl/management/commands/export_to_opensearch.py
+parlhist/parlhistnl/management/commands/export_to_opensearch.py
 
-    Export parlhist data to an OpenSearch instance
+Export parlhist data to an OpenSearch instance
 
-    Available under the EUPL-1.2, or, at your option, any later version.
+Available under the EUPL-1.2, or, at your option, any later version.
 
-    SPDX-FileCopyrightText: 2025 Universiteit Leiden <m.a.staal [at] law.leidenuniv.nl>
-    SPDX-License-Identifier: EUPL-1.2
+SPDX-FileCopyrightText: 2025 Universiteit Leiden <m.a.staal [at] law.leidenuniv.nl>
+SPDX-License-Identifier: EUPL-1.2
 """
 
 import json
@@ -60,9 +60,7 @@ class Command(BaseCommand):
     def handle(self, *args: Any, **options: Any) -> str | None:
 
         if not settings.PARLHIST_OPENSEARCH_ENABLED:
-            self.stderr.write(
-                self.style.ERROR("OpenSearch is not enabled.")
-            )
+            self.stderr.write(self.style.ERROR("OpenSearch is not enabled."))
 
             return
 
@@ -111,12 +109,16 @@ class Command(BaseCommand):
             kamerstukken_os = []
             for kst in kamerstukken_serialized:
                 kst_os = kst["fields"]
-                hoofddossier = KamerstukDossier.objects.get(id=kst["fields"]["hoofddossier"])
+                hoofddossier = KamerstukDossier.objects.get(
+                    id=kst["fields"]["hoofddossier"]
+                )
                 del kst_os["hoofddossier"]
                 kst_os["hoofddossier_nummer"] = hoofddossier.dossiernummer
                 kst_os["hoofddossier_titel"] = hoofddossier.dossiertitel
                 kst_os["_index"] = index_name
-                kst_os["_id"] = f"kst-{hoofddossier.dossiernummer}-{kst_os['ondernummer']}"
+                kst_os["_id"] = (
+                    f"kst-{hoofddossier.dossiernummer}-{kst_os['ondernummer']}"
+                )
                 kamerstukken_os.append(kst_os)
 
             helpers.bulk(os_client, kamerstukken_os, max_retries=3)

@@ -1,13 +1,13 @@
 """
-    parlhist/parlhistnl/management/commands/handeling_recrawl_behandelde_kamerstukken.py
+parlhist/parlhistnl/management/commands/handeling_recrawl_behandelde_kamerstukken.py
 
-    Crawl one Vergadering and all its subitems
+Crawl one Vergadering and all its subitems
 
-    Available under the EUPL-1.2, or, at your option, any later version.
+Available under the EUPL-1.2, or, at your option, any later version.
 
-    SPDX-License-Identifier: EUPL-1.2
-    SPDX-FileCopyrightText: 2023 Martijn Staal <parlhist [at] martijn-staal.nl>
-    SPDX-FileCopyrightText: 2024 Universiteit Leiden <m.a.staal [at] law.leidenuniv.nl>
+SPDX-License-Identifier: EUPL-1.2
+SPDX-FileCopyrightText: 2023 Martijn Staal <parlhist [at] martijn-staal.nl>
+SPDX-FileCopyrightText: 2024 Universiteit Leiden <m.a.staal [at] law.leidenuniv.nl>
 """
 
 import logging

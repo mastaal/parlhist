@@ -1,13 +1,13 @@
 """
-    parlhist/parlhistnl/management/commands/vergaderdag_crawl_full_vergaderjaar.py
+parlhist/parlhistnl/management/commands/vergaderdag_crawl_full_vergaderjaar.py
 
-    Crawl all vergaderingen of a vergaderjaar.
+Crawl all vergaderingen of a vergaderjaar.
 
-    Available under the EUPL-1.2, or, at your option, any later version.
+Available under the EUPL-1.2, or, at your option, any later version.
 
-    SPDX-License-Identifier: EUPL-1.2
-    SPDX-FileCopyrightText: 2023 Martijn Staal <parlhist [at] martijn-staal.nl>
-    SPDX-FileCopyrightText: 2024 Universiteit Leiden <m.a.staal [at] law.leidenuniv.nl>
+SPDX-License-Identifier: EUPL-1.2
+SPDX-FileCopyrightText: 2023 Martijn Staal <parlhist [at] martijn-staal.nl>
+SPDX-FileCopyrightText: 2024 Universiteit Leiden <m.a.staal [at] law.leidenuniv.nl>
 """
 
 import logging

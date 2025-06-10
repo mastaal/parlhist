@@ -1,12 +1,12 @@
 """
-    parlhist/parlhistnl/management/commands/handeling_crawl_uncrawled_behandelde_kamerstukdossiers.py
+parlhist/parlhistnl/management/commands/handeling_crawl_uncrawled_behandelde_kamerstukdossiers.py
 
-    Crawl one Vergadering and all its subitems
+Crawl one Vergadering and all its subitems
 
-    Available under the EUPL-1.2, or, at your option, any later version.
+Available under the EUPL-1.2, or, at your option, any later version.
 
-    SPDX-FileCopyrightText: Copyright 2023, Martijn Staal <parlhist [at] martijn-staal.nl>
-    SPDX-License-Identifier: EUPL-1.2
+SPDX-FileCopyrightText: Copyright 2023, Martijn Staal <parlhist [at] martijn-staal.nl>
+SPDX-License-Identifier: EUPL-1.2
 """
 
 import logging
