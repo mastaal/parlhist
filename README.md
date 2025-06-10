@@ -20,7 +20,7 @@ If you are new to empirical study of governmental documents, [be sure to check o
 WetSuite aims to help scholars to leverage more empirical and NLP-based research methods when studying governmental documents, and has a lot of useful resources on their website.
 
 ## Data accessible via parlhist
-* Handelingen (Dutch parliamentary minutes) from parliamentary year 2011/12 through now.
+* Handelingen (Dutch parliamentary minutes) from parliamentary year 1995-1996 through now.
 * Kamerstukken (Dutch parliamentary documents) from calendar year 1995 until now.
 * Staatsblad (the main Dutch government gazette) from calendar year 1995 until now.
 
@@ -72,7 +72,7 @@ Depending on how many years of data you have crawled, this may take several hour
 
 Alternatively, you can run the `initialize_database_handelingen.sh` shell script, which initializes
 the database with all Handelingen of both the Eerste Kamer and Tweede Kamer of the parliamentary years
-2011/2012 through 2022/2023, and the related Kamerstukken.
+1995/96 through 2024/25, and the related Kamerstukken.
 
 ### Note on memoization
 By default, `parlhist` stores all responses it gets in a raw format. If you want to re-create your database,

@@ -14,6 +14,8 @@ import pathlib
 import pickle
 import time
 import xml.etree.ElementTree as ET
+
+from typing import Literal
 from xml.etree.ElementTree import Element
 
 import requests
@@ -169,3 +171,47 @@ def koop_sru_api_request_all(query: str) -> list[Element]:
         records += xml.findall("sru:records/sru:record", XML_NAMESPACES)
 
     return records
+
+
+def __retrieve_xml_element_or_fail(xml: ET.Element, path: str) -> ET.Element:
+    """Search the xml for path and retrieve this element, or raise a CrawlerException if no element could be found."""
+    search_result_xml = xml.find(path=path, namespaces=XML_NAMESPACES)
+    if search_result_xml is None:
+        raise CrawlerException(f"Could not find {path} in {xml}")
+
+    return search_result_xml
+
+
+def retrieve_xml_element_text_or_fail(xml: ET.Element, path: str) -> str:
+    """Search xml for path and retrieve its text, or raise a CrawlerException if no text could be found."""
+
+    search_result_xml = __retrieve_xml_element_or_fail(xml, path)
+
+    search_result_text = search_result_xml.text
+    if search_result_text is None:
+        raise CrawlerException(f"Search result {search_result_xml} for {path} in {xml} has no inner text")
+
+    return search_result_text
+
+
+def retrieve_xml_element_keyed_value_or_fail(xml: ET.Element, path: str, key: str) -> str:
+    """Search xml for path, retrieve the value given by key, or raise a CrawlerException if no value could be found."""
+
+    search_result_xml = __retrieve_xml_element_or_fail(xml, path)
+
+    search_result_value = search_result_xml.get(key)
+    if search_result_value is None:
+        raise CrawlerException(f"Could not find {key} in the retrieved {search_result_xml} in {xml} using {path}")
+
+    return search_result_value
+
+
+def shorten_kamer(creator: str) -> Literal["ek", "tk"]:
+    """Shorten Tweede Kamer der Staten-Generaal or Eerste Kamer der Staten-Generaal to tk or ek respectively."""
+    if creator == "Tweede Kamer der Staten-Generaal":
+        return "tk"
+
+    if creator == "Eerste Kamer der Staten-Generaal":
+        return "ek"
+
+    raise CrawlerException(f"Could not find the appropriate abbreviation for {creator}")

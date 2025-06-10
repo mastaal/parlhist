@@ -180,6 +180,8 @@ LOGGING = {
 CELERY_BROKER_URL = getenv("CELERY_BROKER_URL", "amqp://rabbitmq")
 CELERY_RESULT_BACKEND = getenv("CELERY_RESULT_BACKEND", "rpc://rabbitmq")
 CELERY_IMPORTS = [
+    "parlhistnl.crawler.handeling",
+    "parlhistnl.crawler.kamerstuk",
     "parlhistnl.crawler.staatsblad"
 ]
 

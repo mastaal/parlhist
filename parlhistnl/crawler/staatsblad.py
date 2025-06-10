@@ -284,8 +284,6 @@ def crawl_all_staatsblad_publicaties_within_koop_sru_query(
     Example queries:
         (w.publicatienaam=Staatsblad AND dt.type=Wet AND dt.date >= 2024-06-01)
         (w.publicatienaam=Staatsblad AND dt.type=Wet AND dt.date >= 2024-01-01 AND dt.date <= 2024-12-31)
-
-    Note: Only tested for dt.type=Wet queries.
     """
 
     results: list[Staatsblad] | list[AsyncResult] = []

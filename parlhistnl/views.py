@@ -13,7 +13,7 @@ from django.core.management import call_command
 from django.shortcuts import render
 
 from parlhistnl.forms import StaatsbladCrawlYearForm
-from parlhistnl.models import Vergadering, Handeling, Kamerstuk, Staatsblad
+from parlhistnl.models import Handeling, Kamerstuk, Staatsblad
 from parlhistnl.crawler.staatsblad import crawl_all_staatsblad_publicaties_in_year
 
 logger = logging.getLogger(__name__)
@@ -27,7 +27,6 @@ def index(request):
     # Generate some status information to show
     status_information = [
         ("Aantal Kamerstukken", Kamerstuk.objects.all().count()),
-        ("Aantal Vergaderingen", Vergadering.objects.all().count()),
         ("Aantal Handelingen", Handeling.objects.all().count()),
         ("Aantal Staatsblad-publicaties", Staatsblad.objects.all().count()),
     ]

@@ -4,6 +4,7 @@
     Available under the EUPL-1.2, or, at your option, any later version.
 
     SPDX-FileCopyrightText: 2023-2025 Martijn Staal <parlhist [at] martijn-staal.nl>
+    SPDX-FileCopyrightText: 2025 Universiteit Leiden <m.a.staal [at] law.leidenuniv.nl>
     SPDX-License-Identifier: EUPL-1.2
 """
 
@@ -18,54 +19,35 @@ logger = logging.getLogger(__name__)
 stb_id_pattern = re.compile(r"^stb-\d{4}-\d+$")
 
 
-class Vergadering(models.Model):
-    """Model for a plenary meeting"""
+class Handeling(models.Model):
+    """Model for the Handeling of a (part of a) plenary meeting"""
 
-    vergaderjaar = models.CharField(max_length=8)
-    nummer = models.IntegerField()
+    identifier = models.CharField(max_length=48, unique=True, null=True, default=None)
     kamer = models.CharField(
         max_length=2,
         choices=[("ek", "Eerste Kamer"), ("tk", "Tweede Kamer")],
         default="tk",
     )
+    vergaderdag = models.DateField(default=datetime.date(1800, 1, 1))
+    vergaderjaar = models.CharField(max_length=9, default="")
 
-    vergaderdatum = models.DateField(default=datetime.date(year=1800, month=1, day=1))
-
-    toegevoegd_op = models.DateTimeField(auto_now_add=True)
-    bijgewerkt_op = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        """Meta information for django"""
-
-        indexes = [
-            models.Index(fields=["vergaderjaar", "nummer", "kamer"]),
-            models.Index(fields=["vergaderjaar", "nummer", "kamer", "vergaderdatum"]),
-        ]
-
-        verbose_name_plural = "Vergaderingen"
-
-    def __str__(self):
-        return f"Vergadering h-{self.kamer}-{self.vergaderjaar}-{self.nummer}"
-
-
-class Handeling(models.Model):
-    """Model for the Handeling of a (part of a) plenary meeting"""
-
-    vergadering = models.ForeignKey(to=Vergadering, on_delete=models.CASCADE)
-    ondernummer = models.IntegerField()
     titel = models.TextField()
     handelingtype = models.CharField(max_length=1024)
 
     tekst = models.TextField()
     raw_html = models.TextField()
+    raw_xml = models.TextField(default="")
     raw_metadata_xml = models.TextField()
+    sru_record_xml = models.BinaryField(default=b"")
 
     behandelde_kamerstukdossiers = models.ManyToManyField(to="KamerstukDossier")
     behandelde_kamerstukken = models.ManyToManyField(to="Kamerstuk")
 
+    preferred_url = models.URLField(default="")
+
     # Flexible field for storing various data about this Handeling
     data = models.JSONField(default=dict)
-    # Currently, this field is used to stored recognized but not crawled kamerstukken/kamerstukdossiers:
+    # Currently, this field is used to store recognized but not crawled kamerstukken/kamerstukdossiers:
     # { "uncrawled": { "behandelde_kamerstukken": [ "36160;5", ...], "behandelde_kamerstukdossiers": ["36130", ... ] }}
 
     toegevoegd_op = models.DateTimeField(auto_now_add=True)
@@ -74,18 +56,21 @@ class Handeling(models.Model):
     class Meta:
         """Meta information for django"""
 
-        indexes = [
-            models.Index(fields=["vergadering", "ondernummer"]),
-        ]
+        indexes = []
 
         verbose_name_plural = "Handelingen"
 
     def __str__(self) -> str:
-        return f"h-{self.vergadering.kamer}-{self.vergadering.vergaderjaar}-{self.vergadering.nummer}-{self.ondernummer}"  # pylint: disable=no-member
+        if self.identifier is not None:
+            return self.identifier
+
+        return "Handeling with no identifier"
 
     def url(self) -> str:
         """Get the url to this Handeling"""
-        return f"https://zoek.officielebekendmakingen.nl/h-{self.vergadering.kamer}-{self.vergadering.vergaderjaar}-{self.vergadering.nummer}-{self.ondernummer}.html"  # pylint: disable=no-member
+        if self.preferred_url != "":
+            return self.preferred_url
+        return f"https://zoek.officielebekendmakingen.nl/{self.identifier}.html"
 
 
 class KamerstukDossier(models.Model):

@@ -1,40 +1,36 @@
 """
-    parlhist/parlhistnl/crawler/handeling.py
+parlhist/parlhistnl/crawler/handeling.py
 
-    Copyright 2023, Martijn Staal <parlhist [at] martijn-staal.nl>
+Available under the EUPL-1.2, or, at your option, any later version.
 
-    Available under the EUPL-1.2, or, at your option, any later version.
-
-    SPDX-License-Identifier: EUPL-1.2
+SPDX-License-Identifier: EUPL-1.2
+SPDX-FileCopyrightText: 2023-2024 Martijn Staal <parlhist [at] martijn-staal.nl>
+SPDX-FileCopyrightText: 2025 Universiteit Leiden <m.a.staal [at] law.leidenuniv.nl>
 """
 
+import datetime
 import logging
 import xml.etree.ElementTree as ET
 
 from bs4 import BeautifulSoup
+from celery import shared_task
+from celery.result import AsyncResult
 from django.db.models import QuerySet
 
-from parlhistnl.models import Handeling, Vergadering, Kamerstuk, KamerstukDossier
+from parlhistnl.models import Handeling, Kamerstuk, KamerstukDossier
 
-from parlhistnl.crawler.utils import CrawlerException, get_url_or_error
+from parlhistnl.crawler.utils import (
+    CrawlerException,
+    get_url_or_error,
+    koop_sru_api_request_all,
+    retrieve_xml_element_text_or_fail,
+    retrieve_xml_element_keyed_value_or_fail,
+    shorten_kamer,
+)
 from parlhistnl.crawler.kamerstuk import crawl_kamerstuk
 from parlhistnl.crawler.kamerdossier import crawl_kamerstukdossier
 
 logger = logging.getLogger(__name__)
-
-
-def __get_titel(xml: ET.Element) -> str:
-    """Get the titel from a parsed metadata xml"""
-
-    return xml.findall("metadata[@name='DC.title']")[0].get("content")
-
-
-def __get_handeling_type(xml: ET.Element) -> str:
-    """Get the handelingen type from a parsed metadata xml"""
-
-    return xml.findall(
-        "metadata[@name='DC.type'][@scheme='OVERHEIDop.HandelingTypen']"
-    )[0].get("content")
 
 
 def __get_behandelde_kamerstukdossiers_and_kamerstukken(
@@ -66,81 +62,66 @@ def __get_behandelde_kamerstukdossiers_and_kamerstukken(
     }
 
 
-def crawl_vergadering_subitem(
-    vergadering: Vergadering, item: int, recrawl=False
-) -> Handeling:
-    """Crawl a Handeling subitem of a vergadering"""
-
-    try:
-        existing_handeling = Handeling.objects.get(
-            vergadering=vergadering, ondernummer=item
-        )
-    except Handeling.DoesNotExist:
-        existing_handeling = None
-
-    if recrawl or existing_handeling is None:
-        logger.info("Crawling new handeling %s %s", vergadering, item)
-        base_url = f"https://zoek.officielebekendmakingen.nl/h-{vergadering.kamer}-{vergadering.vergaderjaar}-{vergadering.nummer}-{item}"
-        html_url = f"{base_url}.html"
-        meta_url = f"{base_url}/metadata.xml"
-
-        try:
-            text_response = get_url_or_error(html_url)
-            meta_response = get_url_or_error(meta_url)
-        except CrawlerException as exc:
-            logger.error(
-                "Couldn't crawl %s, assuming this vergadering subitem does not exist",
-                html_url,
-            )
-            raise CrawlerException(
-                "This vergadering subitem seems to not exist"
-            ) from exc
-
-        return create_or_update_handeling_from_raw_metadata_and_content(
-            vergadering, item, meta_response.text, text_response.text, False
-        )
-    else:
-        logger.info(
-            "Not recrawling existing handeling %s; updating metadata based on saved information",
-            existing_handeling,
-        )
-        return create_or_update_handeling_from_raw_metadata_and_content(
-            vergadering,
-            item,
-            existing_handeling.raw_metadata_xml,
-            existing_handeling.raw_html,
-            True,
-        )
-
-
 def create_or_update_handeling_from_raw_metadata_and_content(
-    vergadering: Vergadering,
-    item: int,
+    identifier: str,
+    sru_record: ET.Element,
     raw_metadata_xml: str,
     raw_html: str,
     raw_html_is_inner_html: bool,
+    raw_xml: str,
 ) -> Handeling:
-    """Create or update a Handeling from the raw metadata and raw html, either from new requests or from stored raw data
+    """
+    Create or update a Handeling from the raw metadata and raw html, either from new requests or from stored raw data
 
     Always updates if an existing Handeling.
     """
-    xml = ET.fromstring(raw_metadata_xml)
-    titel = __get_titel(xml)
-    handelingtype = __get_handeling_type(xml)
-    uncrawled = __get_behandelde_kamerstukdossiers_and_kamerstukken(xml)
+
+    logger.debug("Gathering information for %s", identifier)
+
+    metadata_xml = ET.fromstring(raw_metadata_xml)
+
+    creator_string = retrieve_xml_element_keyed_value_or_fail(
+        metadata_xml, "metadata[@name='DC.creator']", "content"
+    )
+    kamer = shorten_kamer(creator_string)
+
+    vergaderdatum_str = retrieve_xml_element_text_or_fail(
+        sru_record, ".//overheidwetgeving:datumVergadering"
+    )
+    vergaderdatum = datetime.datetime.strptime(vergaderdatum_str, "%Y-%m-%d").date()
+
+    vergaderjaar = retrieve_xml_element_keyed_value_or_fail(
+        metadata_xml, "metadata[@name='OVERHEIDop.vergaderjaar']", "content"
+    )
+
+    titel = retrieve_xml_element_keyed_value_or_fail(
+        metadata_xml, "metadata[@name='DC.title']", "content"
+    )
+
+    try:
+        handelingtype = retrieve_xml_element_keyed_value_or_fail(
+            metadata_xml,
+            "metadata[@name='DC.type'][@scheme='OVERHEIDop.HandelingTypen']",
+            "content",
+        )
+    except CrawlerException:
+        # Some older Handeling items do not have this metadata, so we add our placeholder.
+        handelingtype = "GEEN_HANDELINGTYPE_BEKEND"
+
+    uncrawled = __get_behandelde_kamerstukdossiers_and_kamerstukken(metadata_xml)
 
     data = {"uncrawled": uncrawled}
-    logger.debug(data)
 
+    preferred_url = retrieve_xml_element_text_or_fail(sru_record, ".//gzd:preferredUrl")
+
+    # Extract the text
     soup = BeautifulSoup(raw_html, "html.parser")
     if not raw_html_is_inner_html:
         elems = soup.select("article div#broodtekst.stuk.broodtekst-container")
 
         if len(elems) > 1:
             logger.info(
-                "Got multiple matches where only one was expected %s %s",
-                vergadering,
-                item,
+                "Got multiple matches where only one was expected %s", identifier
             )
 
         inner_html = str(elems[0])
@@ -150,21 +131,19 @@ def create_or_update_handeling_from_raw_metadata_and_content(
         tekst = soup.get_text()
         inner_html = raw_html
 
-    logger.debug(vergadering)
-    logger.debug(item)
-    logger.debug(titel)
-    logger.debug(handelingtype)
+    handeling, _ = Handeling.objects.get_or_create(identifier=identifier)
 
-    handeling, _ = Handeling.objects.get_or_create(
-        vergadering=vergadering,
-        ondernummer=item,
-    )
-
+    handeling.kamer = kamer
+    handeling.vergaderdag = vergaderdatum
+    handeling.vergaderjaar = vergaderjaar
     handeling.titel = titel
     handeling.handelingtype = handelingtype
     handeling.tekst = tekst
     handeling.raw_html = inner_html
+    handeling.raw_xml = raw_xml
     handeling.raw_metadata_xml = raw_metadata_xml
+    handeling.sru_record_xml = ET.tostring(sru_record)
+    handeling.preferred_url = preferred_url
     handeling.data = data
     handeling.save()
 
@@ -296,3 +275,100 @@ def recrawl_behandelde_kamerstukdossiers(handeling: Handeling) -> list[list[Kame
         crawled_kamerstukken.append(ksts)
 
     return crawled_kamerstukken
+
+
+def crawl_handeling_using_sru_record(sru_record: ET.Element) -> Handeling:
+    """Crawl a Handeling using a KOOP SRU api record (parsed xml)"""
+
+    identifier = retrieve_xml_element_text_or_fail(sru_record, ".//dcterms:identifier")
+
+    logger.info("Crawling %s", identifier)
+
+    preferred_url = retrieve_xml_element_text_or_fail(sru_record, ".//gzd:preferredUrl")
+    html_url = retrieve_xml_element_text_or_fail(
+        sru_record, ".//gzd:itemUrl[@manifestation='html']"
+    )
+    xml_url = retrieve_xml_element_text_or_fail(
+        sru_record, ".//gzd:itemUrl[@manifestation='xml']"
+    )
+    metadata_xml_url = retrieve_xml_element_text_or_fail(
+        sru_record, ".//gzd:itemUrl[@manifestation='metadata']"
+    )
+
+    html_response = get_url_or_error(preferred_url)
+    metadata_xml_response = get_url_or_error(metadata_xml_url)
+    xml_response = get_url_or_error(xml_url)
+
+    handeling = create_or_update_handeling_from_raw_metadata_and_content(
+        identifier,
+        sru_record,
+        metadata_xml_response.text,
+        html_response.text,
+        False,
+        xml_response.text,
+    )
+
+    return handeling
+
+
+@shared_task
+def crawl_handeling_using_sru_record_task(sru_record_string: str) -> int:
+    """Wrapper function to call crawl_handeling_using_sru_record as a celery task"""
+
+    handeling = crawl_handeling_using_sru_record(ET.fromstring(sru_record_string))
+
+    return handeling.pk
+
+
+def crawl_all_handelingen_within_koop_sru_query(
+    query: str, queue_tasks=False
+) -> list[Handeling] | list[AsyncResult]:
+    """
+    Crawl al Handeling items which can be found by the given KOOP SRU query
+
+    Example queries:
+        (c.product-area==officielepublicaties AND w.publicatienaam=Handelingen AND dt.date >= 2025-01-01)
+
+    Note that your query MUST ensure that only entries with w.publicatienaam=Handelingen are received.
+    """
+
+    results = []
+    records = koop_sru_api_request_all(query)
+
+    for record in records:
+        try:
+            logger.debug("Crawling %s", record)
+
+            if queue_tasks:
+                async_handeling = crawl_handeling_using_sru_record_task.delay(
+                    ET.tostring(record, encoding="unicode")
+                )
+                results.append(async_handeling)
+            else:
+                new_result = crawl_handeling_using_sru_record(record)
+                results.append(new_result)
+        except CrawlerException:
+            logger.error("Failed to crawl Handeling record %s", record)
+
+    return results
+
+
+def crawl_all_handelingen_in_vergaderjaar(
+    vergaderjaar: str, queue_tasks=False
+) -> list[Handeling] | list[AsyncResult]:
+    """Crawl all publications in the Handelingen with a publicatiedatum within a vergaderjaar, e.g. 2020-2021, 1996-1997"""
+
+    today = datetime.date.today()
+    current_year = today.year
+    if today.month > 9:
+        vergaderjaren = [f"{x}-{x+1}" for x in range(1995, current_year + 1)]
+    else:
+        vergaderjaren = [f"{x}-{x+1}" for x in range(1995, current_year)]
+
+    if vergaderjaar not in vergaderjaren:
+        raise CrawlerException(f"Provided invalid vergaderjaar {vergaderjaar}")
+
+    return crawl_all_handelingen_within_koop_sru_query(
+        f"(c.product-area==officielepublicaties AND w.publicatienaam=Handelingen AND w.vergaderjaar={vergaderjaar})",
+        queue_tasks=queue_tasks
+    )

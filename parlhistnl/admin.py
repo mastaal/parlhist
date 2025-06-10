@@ -9,9 +9,8 @@
 
 from django.contrib import admin
 
-from .models import Vergadering, Handeling, Kamerstuk, KamerstukDossier, Staatsblad
+from .models import Handeling, Kamerstuk, KamerstukDossier, Staatsblad
 
-admin.site.register(Vergadering)
 admin.site.register(Handeling)
 admin.site.register(Kamerstuk)
 admin.site.register(KamerstukDossier)
