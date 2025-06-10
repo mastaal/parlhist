@@ -84,7 +84,7 @@ WSGI_APPLICATION = 'parlhist.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-__database_type = getenv("PARLHIST_DATABASE", "sqlite3")
+__database_type = getenv("PARLHIST_DATABASE_TYPE", "sqlite3")
 
 if __database_type == "postgres":
     DATABASES = {
