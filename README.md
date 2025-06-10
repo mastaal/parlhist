@@ -2,8 +2,8 @@
 
 `parlhist` (working title) is a Python application intended to enable more empirical and statistical
 academic studies of Dutch parliamentary minutes and documents. `parlhist` was initially developed at
-the Department of Constitutional and Administrative Law of Leiden Law School (Lieden University, the
-Netherlands) in order to investigate in a more empiric manner the role of the Dutch Constitution in
+the [Department of Constitutional and Administrative Law of Leiden Law School (Leiden University, the
+Netherlands)](https://www.universiteitleiden.nl/en/law/institute-of-public-law/constitutional-and-administrative-law) in order to investigate in a more empiric manner the role of the Dutch Constitution in
 Dutch parliamentary debates. Afterwards, `parlhist` has been expanded for various different types of research.
 
 `parlhist` enables more empirical study of these documents by providing an accessible an local
@@ -58,12 +58,13 @@ Then, we can initialize the database:
 $ ./manage.py migrate
 ```
 
-Then, we can populate the database as follows. Currently it is only possible to crawl one full year of parliamentary history at once:
+#### Parliamentary minutes
+Then, we can populate the database as follows. We can crawl one full parliamentary year of parliamentary minutes of both chambers at once:
 ```
-$ ./manage.py vergaderdag_crawl_full_vergaderjaar --kamer tk 20212022
+$ ./manage.py handelingen_crawl_vergaderjaar 2021-2022
 ```
 
-Once you have crawled all the parliamentary years you're interested in, you can download the related parliamentary documents using the following commands:
+Once you have crawled the minutes of all the parliamentary years you're interested in, you can download the related parliamentary documents using the following commands:
 ```
 $ ./manage.py handeling_crawl_uncrawled_behandelde_kamerstukdossiers
 $ ./manage.py handeling_crawl_uncrawled_behandelde_kamerstukken
@@ -73,6 +74,16 @@ Depending on how many years of data you have crawled, this may take several hour
 Alternatively, you can run the `initialize_database_handelingen.sh` shell script, which initializes
 the database with all Handelingen of both the Eerste Kamer and Tweede Kamer of the parliamentary years
 1995/96 through 2024/25, and the related Kamerstukken.
+
+#### Staatsblad
+You can crawl all publications in the staatsblad between 2024-01-01 and 2024-12-31 (inclusive) using the following command:
+```
+$ ./manage.py staatsblad_crawl_year 2024
+```
+
+More specific crawling is possible. If you want, you kan write your own query that is compatible with the
+[KOOP SRU API](https://data.overheid.nl/sites/default/files/dataset/d0cca537-44ea-48cf-9880-fa21e1a7058f/resources/Handleiding%2BSRU%2B2.0.pdf),
+and add only the publications that match that query to your parlhist database. See [the `crawl_all_staatsblad_publicaties_within_koop_sru_query` function in parlhistnl/crawler/staatsblad.py](./parlhistnl/crawler/staatsblad.py) for more information.
 
 ### Note on memoization
 By default, `parlhist` stores all responses it gets in a raw format. If you want to re-create your database,
