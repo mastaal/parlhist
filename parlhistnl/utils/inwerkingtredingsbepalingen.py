@@ -1,13 +1,13 @@
 """
-    parlhist/parlhistnl/utils/inwerkingtredingsbepalingen.py
+parlhist/parlhistnl/utils/inwerkingtredingsbepalingen.py
 
-    Assorted utilities for experiments
+Assorted utilities for experiments
 
-    Copyright 2025 Martijn Staal <parlhist [at] martijn-staal.nl>
+Copyright 2025 Martijn Staal <parlhist [at] martijn-staal.nl>
 
-    Available under the EUPL-1.2, or, at your option, any later version.
+Available under the EUPL-1.2, or, at your option, any later version.
 
-    SPDX-License-Identifier: EUPL-1.2
+SPDX-License-Identifier: EUPL-1.2
 """
 
 import datetime

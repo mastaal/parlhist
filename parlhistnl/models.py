@@ -1,11 +1,11 @@
 """
-    parlhist/parlhistnl/models.py
+parlhist/parlhistnl/models.py
 
-    Available under the EUPL-1.2, or, at your option, any later version.
+Available under the EUPL-1.2, or, at your option, any later version.
 
-    SPDX-FileCopyrightText: 2023-2025 Martijn Staal <parlhist [at] martijn-staal.nl>
-    SPDX-FileCopyrightText: 2025 Universiteit Leiden <m.a.staal [at] law.leidenuniv.nl>
-    SPDX-License-Identifier: EUPL-1.2
+SPDX-FileCopyrightText: 2023-2025 Martijn Staal <parlhist [at] martijn-staal.nl>
+SPDX-FileCopyrightText: 2025 Universiteit Leiden <m.a.staal [at] law.leidenuniv.nl>
+SPDX-License-Identifier: EUPL-1.2
 """
 
 import datetime
@@ -182,7 +182,7 @@ class StaatsbladManager(models.Manager):
         """Get a Staatsblad object using an id that is in the form of stb-2024-193"""
 
         if stb_id_pattern.match(stbid) is not None:
-            _, jaargang_str, nummer_str = stbid.split('-')
+            _, jaargang_str, nummer_str = stbid.split("-")
             jaargang = int(jaargang_str)
             nummer = int(nummer_str)
             return self.get(jaargang=jaargang, nummer=nummer)
@@ -343,7 +343,10 @@ class Staatsblad(models.Model):
         artikel_selector = "div.artikel"
 
         if include_article_names:
-            return [artikel_html.get_text() for artikel_html in soup.select(artikel_selector)]
+            return [
+                artikel_html.get_text()
+                for artikel_html in soup.select(artikel_selector)
+            ]
         else:
             artikelen_html = soup.select(artikel_selector)
             for artikel_html in artikelen_html:

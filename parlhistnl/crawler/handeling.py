@@ -370,5 +370,5 @@ def crawl_all_handelingen_in_vergaderjaar(
 
     return crawl_all_handelingen_within_koop_sru_query(
         f"(c.product-area==officielepublicaties AND w.publicatienaam=Handelingen AND w.vergaderjaar={vergaderjaar})",
-        queue_tasks=queue_tasks
+        queue_tasks=queue_tasks,
     )

@@ -1,11 +1,11 @@
 """
-    parlhist/parlhistnl/crawler/utils.py
+parlhist/parlhistnl/crawler/utils.py
 
-    Copyright 2023, 2024, Martijn Staal <parlhist [at] martijn-staal.nl>
+Copyright 2023, 2024, Martijn Staal <parlhist [at] martijn-staal.nl>
 
-    Available under the EUPL-1.2, or, at your option, any later version.
+Available under the EUPL-1.2, or, at your option, any later version.
 
-    SPDX-License-Identifier: EUPL-1.2
+SPDX-License-Identifier: EUPL-1.2
 """
 
 import hashlib
@@ -189,19 +189,25 @@ def retrieve_xml_element_text_or_fail(xml: ET.Element, path: str) -> str:
 
     search_result_text = search_result_xml.text
     if search_result_text is None:
-        raise CrawlerException(f"Search result {search_result_xml} for {path} in {xml} has no inner text")
+        raise CrawlerException(
+            f"Search result {search_result_xml} for {path} in {xml} has no inner text"
+        )
 
     return search_result_text
 
 
-def retrieve_xml_element_keyed_value_or_fail(xml: ET.Element, path: str, key: str) -> str:
+def retrieve_xml_element_keyed_value_or_fail(
+    xml: ET.Element, path: str, key: str
+) -> str:
     """Search xml for path, retrieve the value given by key, or raise a CrawlerException if no value could be found."""
 
     search_result_xml = __retrieve_xml_element_or_fail(xml, path)
 
     search_result_value = search_result_xml.get(key)
     if search_result_value is None:
-        raise CrawlerException(f"Could not find {key} in the retrieved {search_result_xml} in {xml} using {path}")
+        raise CrawlerException(
+            f"Could not find {key} in the retrieved {search_result_xml} in {xml} using {path}"
+        )
 
     return search_result_value
 

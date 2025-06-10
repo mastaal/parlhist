@@ -1,11 +1,11 @@
 """
-    parlhist/parlhistnl/crawler/kamerstuk.py
+parlhist/parlhistnl/crawler/kamerstuk.py
 
-    Available under the EUPL-1.2, or, at your option, any later version.
+Available under the EUPL-1.2, or, at your option, any later version.
 
-    SPDX-License-Identifier: EUPL-1.2
-    SPDX-FileCopyrightText: 2024-2025 Martijn Staal <parlhist [at] martijn-staal.nl>
-    SPDX-FileCopyrightText: 2025 Universiteit Leiden <m.a.staal [at] law.leidenuniv.nl>
+SPDX-License-Identifier: EUPL-1.2
+SPDX-FileCopyrightText: 2024-2025 Martijn Staal <parlhist [at] martijn-staal.nl>
+SPDX-FileCopyrightText: 2025 Universiteit Leiden <m.a.staal [at] law.leidenuniv.nl>
 """
 
 import datetime
@@ -411,10 +411,15 @@ def crawl_kamerstuk(
 
     return kst
 
+
 @shared_task
-def crawl_kamerstuk_task(dossiernummer: str, ondernummer: str, update=False, preferred_url=None) -> int:
+def crawl_kamerstuk_task(
+    dossiernummer: str, ondernummer: str, update=False, preferred_url=None
+) -> int:
     """Simple shared_task wrapper for crawl_kamerstuk"""
-    kst = crawl_kamerstuk(dossiernummer, ondernummer, update=update, preferred_url=preferred_url)
+    kst = crawl_kamerstuk(
+        dossiernummer, ondernummer, update=update, preferred_url=preferred_url
+    )
     return kst.id
 
 
@@ -472,7 +477,12 @@ def crawl_all_kamerstukken_within_koop_sru_query(
                 preferred_url = None
 
             if queue_tasks:
-                kst_task = crawl_kamerstuk_task.delay(dossiernummer_record, ondernummer_record, update=update, preferred_url=preferred_url)
+                kst_task = crawl_kamerstuk_task.delay(
+                    dossiernummer_record,
+                    ondernummer_record,
+                    update=update,
+                    preferred_url=preferred_url,
+                )
                 results.append(kst_task)
             else:
                 kst = crawl_kamerstuk(
