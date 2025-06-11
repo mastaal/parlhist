@@ -22,10 +22,11 @@ from opensearchpy import OpenSearch, helpers
 from parlhistnl.models import Staatsblad, Kamerstuk, KamerstukDossier, Handeling
 
 logger = logging.getLogger(__name__)
+CHUNK_SIZE = 100
 
 
 # From https://stackoverflow.com/a/312464
-def chunks(list, chunk_size):
+def chunks(list, chunk_size=CHUNK_SIZE):
     """Yield successive n-sized chunks from list"""
     for i in range(0, len(list), chunk_size):
         yield list[i : i + chunk_size]
@@ -54,11 +55,6 @@ class Command(BaseCommand):
         else:
             logger.debug("Index %s already exists", index_name)
             return False
-
-    def __batch_add_to_os(self, os_client, items, batch_size=100):
-        """Add all items to opensearch in batches of the given batch size"""
-        for chunk in chunks(items, batch_size):
-            helpers.bulk(os_client, chunk, max_retries=3)
 
     def add_arguments(self, parser: CommandParser) -> None:
         """Add arguments"""
@@ -91,68 +87,93 @@ class Command(BaseCommand):
         )
 
         if options["model"] == "Staatsblad":
+            logger.info("Exporting Staatsblad model to opensearch")
             self.__create_os_index_if_not_exists(os_client, index_name)
 
-            staatsbladen = Staatsblad.objects.all()
+            staatsbladen_pks = Staatsblad.objects.all().values_list("pk", flat=True)
 
-            staatsbladen_serialized = json.loads(
-                serializers.serialize("json", staatsbladen)
-            )
+            # Serialization and exporting is done in chunks to prevent
+            # visits of the beloved OOM-killer
+            for staatsbladen_pks_chunk in chunks(staatsbladen_pks):
+                staatsbladen = Staatsblad.objects.filter(pk__in=staatsbladen_pks_chunk)
+                staatsbladen_serialized = json.loads(
+                    serializers.serialize("json", staatsbladen)
+                )
 
-            staatsbladen_os = []
-            # We need to do some reformatting into a way that OpenSearch will like
-            for stb in staatsbladen_serialized:
-                stb_os = stb["fields"]
-                stb_os["_id"] = f"stb-{stb_os['jaargang']}-{stb_os['nummer']}"
-                stb_os["_index"] = index_name
-                del stb_os["raw_metadata_xml"]
-                staatsbladen_os.append(stb_os)
+                # We need to do some reformatting into a way that OpenSearch will like
+                for stb in staatsbladen_serialized:
+                    stb_os = stb["fields"]
+                    stb_id = f"stb-{stb_os['jaargang']}-{stb_os['nummer']}"
+                    del stb_os["raw_metadata_xml"]
 
-            self.__batch_add_to_os(os_client, staatsbladen_os)
+                    # TODO implement proper error handling here; why do some objects fail to export?
+                    try:
+                        response = os_client.index(
+                            index=index_name, body=stb_os, id=stb_id, refresh=True
+                        )
+                    except:
+                        logger.critical(
+                            "Failed to export Staatsblad with id %s to OpenSearch (%s)",
+                            stb_id,
+                        )
         elif options["model"] == "Kamerstuk":
             self.__create_os_index_if_not_exists(os_client, index_name)
 
-            kamerstukken = Kamerstuk.objects.all()
+            kamerstukken_pks = Kamerstuk.objects.all().values_list("pk", flat=True)
 
-            kamerstukken_serialized = json.loads(
-                serializers.serialize("json", kamerstukken)
-            )
-
-            kamerstukken_os = []
-            for kst in kamerstukken_serialized:
-                kst_os = kst["fields"]
-                hoofddossier = KamerstukDossier.objects.get(
-                    id=kst["fields"]["hoofddossier"]
+            for kamerstukken_pks_chunk in chunks(kamerstukken_pks):
+                kamerstukken = Kamerstuk.objects.filter(pk__in=kamerstukken_pks_chunk)
+                kamerstukken_serialized = json.loads(
+                    serializers.serialize("json", kamerstukken)
                 )
-                del kst_os["hoofddossier"]
-                kst_os["hoofddossier_nummer"] = hoofddossier.dossiernummer
-                kst_os["hoofddossier_titel"] = hoofddossier.dossiertitel
-                kst_os["_index"] = index_name
-                kst_os["_id"] = (
-                    f"kst-{hoofddossier.dossiernummer}-{kst_os['ondernummer']}"
-                )
-                kamerstukken_os.append(kst_os)
 
-            self.__batch_add_to_os(os_client, kamerstukken_os)
+                for kst in kamerstukken_serialized:
+                    kst_os = kst["fields"]
+                    hoofddossier = KamerstukDossier.objects.get(
+                        id=kst["fields"]["hoofddossier"]
+                    )
+                    del kst_os["hoofddossier"]
+                    kst_os["hoofddossier_nummer"] = hoofddossier.dossiernummer
+                    kst_os["hoofddossier_titel"] = hoofddossier.dossiertitel
+                    kst_id = f"kst-{hoofddossier.dossiernummer}-{kst_os['ondernummer']}"
+
+                    try:
+                        response = os_client.index(
+                            index=index_name, body=kst_os, id=kst_id, refresh=True
+                        )
+                    except:
+                        logger.critical(
+                            "Failed to export Kamerstuk with id %s to OpenSearch",
+                            kst_id,
+                        )
         elif options["model"] == "Handeling":
             self.__create_os_index_if_not_exists(os_client, index_name)
 
-            handelingen = Handeling.objects.all()
+            handelingen_pks = Handeling.objects.all().values_list("pk", flat=True)
 
-            handelingen_serialized = json.loads(
-                serializers.serialize("json", handelingen)
-            )
+            for handelingen_pks_chunk in chunks(handelingen_pks):
+                handelingen = Handeling.objects.filter(pk__in=handelingen_pks_chunk)
+                handelingen_serialized = json.loads(
+                    serializers.serialize("json", handelingen)
+                )
 
-            handelingen_os = []
-            for handeling in handelingen_serialized:
-                handeling_os = handeling["fields"]
-                handeling_os["_id"] = handeling_os["identifier"]
-                handeling_os["_index"] = index_name
-                del handeling_os["sru_record_xml"]
+                for handeling in handelingen_serialized:
+                    handeling_os = handeling["fields"]
+                    handeling_id = handeling_os["identifier"]
+                    del handeling_os["sru_record_xml"]
 
-                handelingen_os.append(handeling_os)
-
-            self.__batch_add_to_os(os_client, handelingen_os)
+                    try:
+                        response = os_client.index(
+                            index=index_name,
+                            body=handeling_os,
+                            id=handeling_id,
+                            refresh=True,
+                        )
+                    except:
+                        logger.critical(
+                            "Failed to export Handeling with id %s to OpenSearch (%s)",
+                            handeling_id,
+                        )
         else:
             logger.error("No valid / known model to export specified")
             self.stderr.write(
