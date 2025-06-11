@@ -19,9 +19,16 @@ from django.core.management import BaseCommand
 from django.core.management.base import CommandParser
 from opensearchpy import OpenSearch, helpers
 
-from parlhistnl.models import Staatsblad, Kamerstuk, KamerstukDossier
+from parlhistnl.models import Staatsblad, Kamerstuk, KamerstukDossier, Handeling
 
 logger = logging.getLogger(__name__)
+
+
+# From https://stackoverflow.com/a/312464
+def chunks(list, chunk_size):
+    """Yield successive n-sized chunks from list"""
+    for i in range(0, len(list), chunk_size):
+        yield list[i : i + chunk_size]
 
 
 class Command(BaseCommand):
@@ -48,12 +55,17 @@ class Command(BaseCommand):
             logger.debug("Index %s already exists", index_name)
             return False
 
+    def __batch_add_to_os(self, os_client, items, batch_size=100):
+        """Add all items to opensearch in batches of the given batch size"""
+        for chunk in chunks(items, batch_size):
+            helpers.bulk(os_client, chunk, max_retries=3)
+
     def add_arguments(self, parser: CommandParser) -> None:
         """Add arguments"""
         parser.add_argument(
             "model",
             type=str,
-            choices=["Staatsblad", "Kamerstuk"],
+            choices=["Staatsblad", "Kamerstuk", "Handeling"],
             help="Choose which model you want to export to OpenSearch",
         )
 
@@ -96,7 +108,7 @@ class Command(BaseCommand):
                 del stb_os["raw_metadata_xml"]
                 staatsbladen_os.append(stb_os)
 
-            helpers.bulk(os_client, staatsbladen_os, max_retries=3)
+            self.__batch_add_to_os(os_client, staatsbladen_os)
         elif options["model"] == "Kamerstuk":
             self.__create_os_index_if_not_exists(os_client, index_name)
 
@@ -121,7 +133,26 @@ class Command(BaseCommand):
                 )
                 kamerstukken_os.append(kst_os)
 
-            helpers.bulk(os_client, kamerstukken_os, max_retries=3)
+            self.__batch_add_to_os(os_client, kamerstukken_os)
+        elif options["model"] == "Handeling":
+            self.__create_os_index_if_not_exists(os_client, index_name)
+
+            handelingen = Handeling.objects.all()
+
+            handelingen_serialized = json.loads(
+                serializers.serialize("json", handelingen)
+            )
+
+            handelingen_os = []
+            for handeling in handelingen_serialized:
+                handeling_os = handeling["fields"]
+                handeling_os["_id"] = handeling_os["identifier"]
+                handeling_os["_index"] = index_name
+                del handeling_os["sru_record_xml"]
+
+                handelingen_os.append(handeling_os)
+
+            self.__batch_add_to_os(os_client, handelingen_os)
         else:
             logger.error("No valid / known model to export specified")
             self.stderr.write(
