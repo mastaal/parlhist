@@ -64,8 +64,8 @@ services:
     env_file:
       - .env
     ports:
-      - 9200:9200 # REST API
-      - 9600:9600 # Performance Analyzer
+      - 127.0.0.1:9200:9200 # REST API
+      - 127.0.0.1:9600:9600 # Performance Analyzer
     networks:
       - parlhist-net # All of the containers will join the same Docker bridge network
   opensearch-dashboards:
