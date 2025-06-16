@@ -84,16 +84,27 @@ WSGI_APPLICATION = 'parlhist.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "parlhist_db",
-        "USER": "parlhist_user",
-        "PASSWORD": "verysecure",
-        "HOST": "127.0.0.1",
-        "PORT": "5432",
+__database_type = getenv("PARLHIST_DATABASE_TYPE", "sqlite3")
+
+if __database_type == "postgres":
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": getenv("POSTGRES_DATABASE", "parlhist_db"),
+            "USER": getenv("POSTGRES_USER", "parlhist_user"),
+            "PASSWORD": getenv("POSTGRES_PASSWORD", "verysecure"),
+            "HOST": getenv("POSTGRES_HOST", "localhost"),
+            "PORT": getenv("POSTGRES_PORT", "5432"),
+        }
     }
-}
+else:
+    # Assume sqlite
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": "parlhist.db"
+        }
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
