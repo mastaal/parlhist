@@ -14,27 +14,41 @@ own experiments.
 
 The data used by `parlhist` is retrieved from the official publications by the Dutch Government.
 More information can be found on [the page of this dataset on data.overheid.nl](https://data.overheid.nl/dataset/officiele-bekendmakingen#panel-description).
-[The API reference of the SRU API by KOOP can be found here](https://data.overheid.nl/sites/default/files/dataset/d0cca537-44ea-48cf-9880-fa21e1a7058f/resources/Handleiding%2BSRU%2B2.0.pdf).
+[The API reference of the SRU API by KOOP can be found here](https://data.overheid.nl/dataset/officiele-bekendmakingen#panel-resources).
 
 If you are new to empirical study of governmental documents, [be sure to check out WetSuite!](https://www.wetsuite.nl/)
 WetSuite aims to help scholars to leverage more empirical and NLP-based research methods when studying governmental documents, and has a lot of useful resources on their website.
 
+## When can parlhist be useful for my research?
+`parlhist` aims to enable you to help you research official Dutch government publications in the _Staatsblad_, _Kamerstukken_ and _Handelingen_ in a more empirical manner. This tool can help you answers questions like: "Have any amendments that are textually similar to this amendment been previously proposed?", "Is it increasingly common that a parliamentary act allows the government to differentiate the date in which individual clauses enter into force?", or "What is the role of the Constitution in parliamentary debates?". 
+
+Using `parlhist`, you can use Python scripts to for example define the initial selection of publications that you want to manually inspect, or to evaluate if there are trends over time. Note however that it is unrealistic to expect to completely automate your research with `parlhist`: you will generally still need to do some manual inspection or manual labelling of data.
+
 ## Data accessible via parlhist
+As of the latest version of `parlhist`, the following data can be accessed through it:
 * Handelingen (Dutch parliamentary minutes) from parliamentary year 1995-1996 through now.
 * Kamerstukken (Dutch parliamentary documents) from calendar year 1995 until now.
 * Staatsblad (the main Dutch government gazette) from calendar year 1995 until now.
 
+## Data not yet accessible via parlhist
+Not all official publications are accessible via parlhist. Some examples are:
+* the Staatscourant
+* Parliamentary agendas
+* Official publications of decentral government bodies such as municipalities, provinces, and water boards (waterschappen).
+* Attachments to the Kamerstukken
+* Aanhangselen bij de Handelingen (writter parliamentary questions, "Kamervragen")
+
 ## Features
 * **Extendible**: `parlhist` can be easily extended, as it is based on the [Django web framework](https://www.djangoproject.com/). Data can be easily queried using the Django database-abstraction API, new experiments can be added as new Django commands, or you could even add a complete interactive web-interface to your experiment.
-* **Free and open source**: `parlhist` is available under the European Union Public License v1.2 (EUPL-1.2) or any later version. You can use and change `parlhist` for any goal. If you share your changes to `parlhist`, you must share these under the same license. [Please consult the full license for more information](/LICENSE).
+* **Free and open source**: `parlhist` is available under the European Union Public License v1.2 (EUPL-1.2) or any later version. You can use, study, share and change `parlhist` for any goal. If you share your changes to `parlhist`, you must share these under the EUPL-1.2 or any later version of this license. [Please consult the full license for more information](/LICENSE).
 * **Automatic memoization** of crawling results: remote data is saved locally in a raw form. When developing `parlhist`, this allows you to quickly rebuild your local database without sending a lot of outbound network requests.
 
-## Usage
+## Setting up parlhist to develop and run your own experiments
 
 ### Requirements
 
 * A database, preferably PostgreSQL. For small datasets and experiments, SQLite may suffice. But be aware that the software is only tested on PostgreSQL.
-* A machine to run `parlhist` on, preferably a (recent) Linux machine. The software might work on other operating systems. On Windows, using Windows Subsystem for Linux (WSL) may be a good option.
+* A machine to run `parlhist` on, preferably one that runs a modern Linux distribution. `parlhist` has been known to work on recent versions of Fedora, Debian and Ubuntu. The software might work on other operating systems. On Windows, using Windows Subsystem for Linux (WSL) may be a good option.
 
 ### Installation
 Clone the repository:
@@ -50,7 +64,17 @@ $ source .venv/bin/activate
 $ pip install -U -r requirements.txt
 ```
 If you want to edit the code, you might want to also install all the dependencies in `development_requirements.txt` as well.
-Then, make the appropriate changes to the `DATABASES` variable in `parlhist/settings.py`, so that it is configured to use your database.
+If you are just starting out, using the default database (SQLite) is fine. The database will then be stored in the `parlhist.db` file in the same folder as parlhist.
+If you are using a different database such as PostgreSQL, you need to make the appropriate changes to the `DATABASES` variable in `parlhist/settings.py`, so that it is configured to use your database.
+
+Note that you can always get help with all the available Django commands:
+```
+$ ./manage.py help
+```
+Or with a specific command:
+```
+$ ./manage.py help migrate
+```
 
 ### Preparing the database
 Then, we can initialize the database:
@@ -85,6 +109,16 @@ More specific crawling is possible. If you want, you kan write your own query th
 [KOOP SRU API](https://data.overheid.nl/sites/default/files/dataset/d0cca537-44ea-48cf-9880-fa21e1a7058f/resources/Handleiding%2BSRU%2B2.0.pdf),
 and add only the publications that match that query to your parlhist database. See [the `crawl_all_staatsblad_publicaties_within_koop_sru_query` function in parlhistnl/crawler/staatsblad.py](./parlhistnl/crawler/staatsblad.py) for more information.
 
+To crawl the first thirty available years of Staatsblad publications (1995 through 2024), you can run the `initialize_database_staatsblad.sh` script. Be aware however that will take a long time, and be sure that you are not sending to many requests to KOOPs API.
+
+#### Kamerstukken
+You can crawl all publications in the Kamerstukken between 2024-01-01 and 2024-12-31 (inclusive) using the following command:
+```
+$ ./manage.py kamerstukken_crawl_year 2024
+```
+
+Just as with the Staatsblad crawling, more specific crawling is possible by specifying a query that is compatible with the KOOP SRU API. See [the `crawl_all_kamerstukken_within_koop_sru_query` function in parlhistnl/crawler/kamerstuk.py](./parlhistnl/crawler/kamerstuk.py) for more information.
+
 ### Note on memoization
 By default, `parlhist` stores all responses it gets in a raw format. If you want to re-create your database,
 you can quickly rebuild everything from these memoized requests. The downside of this, is that the memoized
@@ -92,6 +126,9 @@ requests could technically be outdated. But as long as you're only working with 
 years, this should not pose a problem.
 
 When no memoized request exists, the crawler will wait some time to prevent overloading the API.
+
+### Note on parallelization
+You can parallelize crawling tasks by supplying the `--queue-tasks` flag to commands which support this (if in doubt, specify --help to get help with a command). This wil enqueue crawling tasks with celery. For more information on how to use celery with parlhist, see [the development documentation](./docs/development.md).
 
 ### Run your experiments
 
@@ -108,10 +145,10 @@ None yet. Stay tuned!
 ## Contribute
 You can contribute in various ways to `parlhist`:
 * By using `parlhist` for your research and sharing your experience and results.
-* By sharing your modifications and additions to the `parlhist` code.
 * By citing `parlhist` when you have used it for a publication.
-
-[Be sure to check out the issue tracker for possible useful contributions!](https://github.com/mastaal/parlhist/issues)
+* By sharing your modifications and additions to the `parlhist` code.
+* [By checking out the issue tracker for possible useful contributions!](https://github.com/mastaal/parlhist/issues)
+* By telling people about how you have used `parlhist` for your reseach.
 
 ## Copyright and license
 
