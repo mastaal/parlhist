@@ -18,6 +18,7 @@ from enum import Enum
 from os import environ
 
 import requests
+from requests.auth import HTTPBasicAuth
 
 from rdflib import Graph, URIRef
 
@@ -46,15 +47,11 @@ date_in_title_re: re.Pattern = re.compile(
 )
 
 try:
-    LIDO_COOKIES = {
-        "JSESSIONID": environ["PARLHIST_LIDO_JSESSIONID"],
-        "INGRESSCOOKIE": environ["PARLHIST_LIDO_INGRESSCOOKIE"],
-    }
+    LIDO_BASIC_AUTH = HTTPBasicAuth(environ["PARLHIST_LIDO_USER"], environ["PARLHIST_LIDO_PASSWORD"])
 except KeyError:
     logger.warning(
-        "Appropriate environment variables are not set; no LiDO authentication cookies set."
+        "PARLHIST_LIDO_USER and/or PARLHIST_LIDO_PASSWORD were not set; no LiDO authentication available"
     )
-    LIDO_COOKIES = {}
 
 LIDO_GET_LINKS_API_URL = "https://linkeddata.overheid.nl/service/get-links"
 
@@ -238,7 +235,7 @@ def find_inwerkingtredingskb_via_lido(
     Use the authenticated /get-links API endpoint from LiDO to find all Staatsblad publications which are a 'inwerkingtredingsbron'
     for the given Staatsblad
 
-    Note: this implementation expects that you have defined PARLHIST_LIDO_JSESSIONID and PARLHIST_LIDO_INGRESSCOKIE environment
+    Note: this implementation expects that you have defined PARLHIST_LIDO_USER and PARLHIST_LIDO_PASSWORD environment
     variables appropriately to authenticate with the LiDO API.
 
     For more information on the API, please see https://linkeddata.overheid.nl/front/portal/services
@@ -254,7 +251,7 @@ def find_inwerkingtredingskb_via_lido(
 
     try:
         rdfxml_response = requests.get(
-            LIDO_GET_LINKS_API_URL, params=params, cookies=LIDO_COOKIES, timeout=600
+            LIDO_GET_LINKS_API_URL, params=params, auth=LIDO_BASIC_AUTH, timeout=600
         )
     except requests.exceptions.ReadTimeout as exc:
         logger.fatal("RDF XML request timed out %s", exc)
