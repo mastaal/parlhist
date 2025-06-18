@@ -247,6 +247,9 @@ def find_inwerkingtredingskb_via_lido(
         - the original rdf graph
     """
 
+    # TODO: this can possibly be made a lot faster by providing the 'output: xml' option, as that seems quite
+    # a bit lighter on the API endpoint. Alternatively, you can download a complete LiDO dump
+    # and run your own RDF server to directly query.
     params = {"ext-id": f"OEP:{stb.stbid}"}
 
     try:
