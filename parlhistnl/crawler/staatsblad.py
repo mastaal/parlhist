@@ -201,9 +201,13 @@ def crawl_staatsblad(
     # Also store the metadata in JSON
     metadata_json = {}
     for metadata in metadata_xml.findall("metadata"):
-        metadata_json[metadata.get("name").replace(".", "").lower()] = metadata.get(
-            "content"
-        )
+        metadata_name = metadata.get("name").replace(".", "").lower()
+        if metadata_name in metadata_json:
+            metadata_json[metadata_name].append(metadata.get("content"))
+        else:
+            metadata_json[metadata_name] = [metadata.get(
+                "content"
+            )]
 
     # TODO: Make specific function for extracting this inner html
     soup = BeautifulSoup(text_response.text, "html.parser")
