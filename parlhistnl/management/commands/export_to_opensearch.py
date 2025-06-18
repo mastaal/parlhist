@@ -47,7 +47,14 @@ class Command(BaseCommand):
             logger.info(
                 "Index %s does not already exist, creating new index...", index_name
             )
-            create_response = os_client.indices.create(index_name)
+            create_response = os_client.indices.create(
+                index_name,
+                body={
+                    "settings": {
+                        "index": {"highlight.max_analyzed_offset": 5000000}
+                    }
+                },
+            )
             # The response for this API endpoint is currently (OS v.3.0) not documented, so just hope
             # that this worked! https://docs.opensearch.org/docs/3.0/api-reference/index-apis/create-index/
             logger.debug(create_response)
