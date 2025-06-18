@@ -42,6 +42,7 @@ Not all official publications are accessible via parlhist. Some examples are:
 * **Extendible**: `parlhist` can be easily extended, as it is based on the [Django web framework](https://www.djangoproject.com/). Data can be easily queried using the Django database-abstraction API, new experiments can be added as new Django commands, or you could even add a complete interactive web-interface to your experiment.
 * **Free and open source**: `parlhist` is available under the European Union Public License v1.2 (EUPL-1.2) or any later version. You can use, study, share and change `parlhist` for any goal. If you share your changes to `parlhist`, you must share these under the EUPL-1.2 or any later version of this license. [Please consult the full license for more information](/LICENSE).
 * **Automatic memoization** of crawling results: remote data is saved locally in a raw form. When developing `parlhist`, this allows you to quickly rebuild your local database without sending a lot of outbound network requests.
+* **Export data to OpenSearch**: you can automatically export data from `parlhist` to an [OpenSearch](https://opensearch.org/) instance, so that you can use [OpenSearch Dashboards](https://docs.opensearch.org/docs/latest/about/) to interact with the data collected via parlhist, or to use the advanced search endpoints provided by OpenSearch to interact with this data.
 
 ## Setting up parlhist to develop and run your own experiments
 
@@ -137,6 +138,16 @@ Two main approaches exist to do this. First, you can add a new Django command wh
 (such as `parlhistnl/management/commands/experiment_1_grondwet.py` we've used). Secondly, you can enter a
 Django shell using `$ ./manage.py shell` and export the data you are looking for to some other format (pandas,
 json, etc.), and do the data analysis in some other tool (a Jupyter Notebook for example).
+
+### Exporting to OpenSearch
+Using the `export_to_opensearch` subcommand you can automatically export `parlhist` data to an OpenSearch instance. If you do not know what OpenSearch is or how to set up your own instance, [check out the official OpenSearch documentation](https://docs.opensearch.org/docs/latest/getting-started/).
+
+For example, to export all Staatsblad objects to your OpenSearch instance:
+```
+$ ./manage.py export_to_opensearch Staatsblad
+```
+
+To learn more about the OpenSearch integration, check out [`export_to_opensearch.py`](./parlhistnl/management/commands/export_to_opensearch.py).
 
 ## Publications
 
