@@ -1,10 +1,10 @@
 """
 parlhist/parlhistnl/crawler/utils.py
 
-Copyright 2023, 2024, Martijn Staal <parlhist [at] martijn-staal.nl>
-
 Available under the EUPL-1.2, or, at your option, any later version.
 
+SPDX-FileCopyrightText: 2023-2024 Martijn Staal <parlhist [at] martijn-staal.nl>
+SPDX-FileCopyrightText: 2025 Universiteit Leiden <m.a.staal [at] law.leidenuniv.nl>
 SPDX-License-Identifier: EUPL-1.2
 """
 
@@ -65,6 +65,9 @@ def __check_response_status_code(response: requests.Response) -> None:
         )
 
 
+inter_request_delay_seconds = 0.25
+
+
 # TODO: Would be nice to also pass custom parameters, cookies and timeout values
 def get_url_or_error(
     url: str, memoize=settings.PARLHIST_CRAWLER_DEFAULT_USE_MEMOIZATION
@@ -75,6 +78,12 @@ def get_url_or_error(
     be able to still easily change behaviour on our side.
     Also fixes encoding
     """
+
+    # This is a bit of a naive approach, I'm not even sure if this would work between celery
+    # workers and tasks. I guess the proper approach would be to save this in an (in memory) database
+    # somewhere?
+    global inter_request_delay_seconds
+    logger.debug("inter_request_delay_seconds: %s", inter_request_delay_seconds)
 
     if memoize:
         logger.debug("Checking if memoized version exists for %s", url)
@@ -95,9 +104,25 @@ def get_url_or_error(
         logger.debug(
             "Actual request was sent, sleeping to prevent service disruption at receiver end"
         )
-        time.sleep(0.25)
+        time.sleep(inter_request_delay_seconds)
     except requests.exceptions.ReadTimeout as exc:
         raise CrawlerException from exc
+
+    # This will potentially go on forever... Is that the right approach?
+    if response.status_code == 429:
+        logger.error("Received HTTP 429 Too Many Requests status code, backing off and retrying")
+
+        inter_request_delay_seconds *= 2
+
+        while response.status_code == 429:
+            response = requests.get(url, timeout=30)
+            inter_request_delay_seconds *= 2
+
+    else:
+        if inter_request_delay_seconds > 0.25:
+            inter_request_delay_seconds /= 2
+
+    __check_response_status_code(response)
 
     if response.encoding != response.apparent_encoding:
         logger.info(
@@ -106,8 +131,6 @@ def get_url_or_error(
             response.apparent_encoding,
         )
         response.encoding = response.apparent_encoding
-
-    __check_response_status_code(response)
 
     if memoize:
         full_path = __get_memoized_path(url)
