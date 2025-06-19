@@ -16,7 +16,7 @@ from bs4 import BeautifulSoup
 from django.db import models
 
 logger = logging.getLogger(__name__)
-stb_id_pattern = re.compile(r"^stb-\d{4}-\d+$")
+stb_id_pattern = re.compile(r"^stb-\d{4}-\d+(-n\d+)?$")
 
 
 class Handeling(models.Model):
@@ -182,10 +182,18 @@ class StaatsbladManager(models.Manager):
         """Get a Staatsblad object using an id that is in the form of stb-2024-193"""
 
         if stb_id_pattern.match(stbid) is not None:
-            _, jaargang_str, nummer_str = stbid.split("-")
-            jaargang = int(jaargang_str)
-            nummer = int(nummer_str)
-            return self.get(jaargang=jaargang, nummer=nummer)
+            try:
+                _, jaargang_str, nummer_str = stbid.split("-")
+                jaargang = int(jaargang_str)
+                nummer = int(nummer_str)
+
+                stb = self.get(jaargang=jaargang, nummer=nummer, versienummer="")
+            except ValueError:
+                logger.debug("Value error, expecting verbeterblad")
+                _, jaargang_str, nummer_str, versie_str = stbid.split("-")
+                stb = self.get(jaargang=int(jaargang_str), nummer=int(nummer_str), versienummer=versie_str)
+
+            return stb
 
 
 class Staatsblad(models.Model):
