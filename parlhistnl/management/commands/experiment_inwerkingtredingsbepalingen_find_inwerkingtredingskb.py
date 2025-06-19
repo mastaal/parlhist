@@ -2,9 +2,9 @@
     parlhist/parlhistnl/management/commands/experiment_inwerkingtredingsbepalingen_find_inwerkingtredingskb.py
 
     Experiment inwerkingtredingsbepalingen, step 2
-    Using the annotated Label Studio JSON dataset, get information on the actual use
-    of gedifferentieerde inwerkingtredingsbepalingen.
-    Try to find the related inwerkingtredingskb
+    Using the annotated Label Studio JSON dataset, add all the metadata that is
+    in the parlhist database and get information on the actual use
+    of gedifferentieerde inwerkingtredingsbepalingen using the LiDO API.
 
     Available under the EUPL-1.2, or, at your option, any later version.
 
@@ -37,6 +37,12 @@ class Command(BaseCommand):
             help="de bestandsnaam van het Label Studio JSON-bestand met de geannoteerde dataset."
         )
 
+        parser.add_argument(
+            "--disable-lido-lookup",
+            action="store_true",
+            help="Disable lookup with the LiDO API; only add/update metadata that already exists in the database."
+        )
+
     def handle(self, *args: Any, **options: Any) -> str | None:
         """Experiment inwerkingtredingsbepalingen, step 2"""
 
@@ -56,23 +62,25 @@ class Command(BaseCommand):
             dataset_entry["data"]["ondertekendatum"] = stb.ondertekendatum.strftime("%Y-%m-%d")
             dataset_entry["data"]["stb_metadata"] = stb.metadata_json
             dataset_entry["data"]["titel"] = stb.titel
-            logger.info("Processing %s", stbid)
-            try:
-                inwerkingtredings_label = dataset_entry["annotations"][0]["result"][0]["value"]["labels"][0]
-                logger.info("Has inwerkingtredingsbepalingtype %s", inwerkingtredings_label)
 
+            if not options["disable_lido_lookup"]:
+                logger.info("Processing %s", stbid)
                 try:
-                    inwerkingtredingskbs, inwerkingtredingsdata, art_inw, _ = find_inwerkingtredingskb_via_lido(stb)
-                    logger.info("(%s) found: %s, %s", stbid, inwerkingtredingskbs, inwerkingtredingsdata)
-                    dataset_entry["data"]["inwerkingtredingsinformatie"] = {
-                        "inwerkingtredingskbs": [kb.stbid for kb in inwerkingtredingskbs],
-                        "inwerkingtredingsdata": [date.strftime("%Y-%m-%d") for date in inwerkingtredingsdata],
-                        "artikelen_inwerkingtredingsinformatie": art_inw
-                    }
-                except:
-                    logger.fatal("!!! WARNING !!! could not find inwerkingtredingsinformation for %s", stbid)
-            except IndexError:
-                logger.info("No result in annotation for %s, assuming no inwerkingtredingsbepaling", stbid)
+                    inwerkingtredings_label = dataset_entry["annotations"][0]["result"][0]["value"]["labels"][0]
+                    logger.info("Has inwerkingtredingsbepalingtype %s", inwerkingtredings_label)
+
+                    try:
+                        inwerkingtredingskbs, inwerkingtredingsdata, art_inw, _ = find_inwerkingtredingskb_via_lido(stb)
+                        logger.info("(%s) found: %s, %s", stbid, inwerkingtredingskbs, inwerkingtredingsdata)
+                        dataset_entry["data"]["inwerkingtredingsinformatie"] = {
+                            "inwerkingtredingskbs": [kb.stbid for kb in inwerkingtredingskbs],
+                            "inwerkingtredingsdata": [date.strftime("%Y-%m-%d") for date in inwerkingtredingsdata],
+                            "artikelen_inwerkingtredingsinformatie": art_inw
+                        }
+                    except:
+                        logger.fatal("!!! WARNING !!! could not find inwerkingtredingsinformation for %s", stbid)
+                except IndexError:
+                    logger.info("No result in annotation for %s, assuming no inwerkingtredingsbepaling", stbid)
 
             enriched_dataset.append(dataset_entry)
 
