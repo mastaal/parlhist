@@ -13,7 +13,7 @@ Using the python virtual environment manager of your choice, install all package
 Rabbitmq is the recommended task queue for celery. You can run a local instance using:
 
 ```
-$ podman run -it --rm --name rabbitmq -p 5672:5672 rabbitmq
+$ podman run -it --rm --name rabbitmq -p 5672:5672 docker.io/rabbitmq
 ```
 
 (If you use docker, just change 'podman' into 'docker')
