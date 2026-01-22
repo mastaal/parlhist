@@ -1,5 +1,8 @@
 # parlhist
 
+> [!IMPORTANT]
+> **This repository has moved to [Codeberg](https://codeberg.org/mastaal/parlhist).** This GitHub repository has been archived on January 22nd, 2026. Please visit the repository on Codeberg to see the latest developments!
+
 `parlhist` (working title) is a Python application intended to enable more empirical and statistical
 academic studies of Dutch parliamentary minutes and documents. `parlhist` was initially developed at
 the [Department of Constitutional and Administrative Law of Leiden Law School (Leiden University, the
